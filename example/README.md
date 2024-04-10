@@ -35,7 +35,7 @@ Since the STM8DCE tool operates on assembly files, we need to generate these fro
 
 Create a build directory:
 ```bash
-$ mkdir -p build/asm/
+mkdir -p build/asm/
 ```
 
 Standard Peripheral Library:
@@ -76,12 +76,12 @@ stm8s_adc1.asm  stm8s_beep.asm  stm8s_exti.asm  stm8s_gpio.asm   stm8s_it.asm   
 Now that we have the assembly files, we can apply the STM8DCE tool to eliminate dead code. We'll create a new directory to store the optimized assembly files:
 
 ```bash
-$ mkdir -p build/dce/
+mkdir -p build/dce/
 ```
 
 Now we can run the STM8DCE tool on the assembly files. We'll use the `-v` flag to enable verbose output, which neatly shows which functions and constants were eliminated:
 ```bash
-$ stm8dce -v -o build/dce build/asm/*.asm
+stm8dce -v -o build/dce build/asm/*.asm
 ```
 
 Here's the output we get (truncated for brevity):
@@ -122,7 +122,7 @@ The next step is to assemble the optimized assembly files to object files. SDCC 
 
 We'll first create a new directory to store the object files:
 ```bash 
-$ mkdir -p build/obj/
+mkdir -p build/obj/
 ```
 
 When the assemble the Standard Peripheral Library:

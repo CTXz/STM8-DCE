@@ -1,6 +1,24 @@
-# STM8-DCE - A SDCC STM8 Dead Code Elimination Tool
+# STM8-DCE - A SDCC STM8 Dead Code Elimination Tool <!-- omit in toc -->
 
 *Gone are the days of cherry picking the Standard Peripheral Library!*
+
+## Table of Contents <!-- omit in toc -->
+- [Features](#features)
+- [Issues](#issues)
+- [Disclaimer](#disclaimer)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Examples](#examples)
+    - [DCE without Interrupt Optimization](#dce-without-interrupt-optimization)
+    - [DCE with Interrupt Optimization](#dce-with-interrupt-optimization)
+    - [Alternative Entry Label](#alternative-entry-label)
+    - [Exclude Functions and Constants](#exclude-functions-and-constants)
+    - [Verbose Output](#verbose-output)
+    - [Debug Output](#debug-output)
+- [What about XaviDCR92's sdcc-gas fork](#what-about-xavidcr92s-sdcc-gas-fork)
+- [How the tool works](#how-the-tool-works)
+- [Reporting Issues \& Contributing](#reporting-issues--contributing)
+
 
 ## Features
 
