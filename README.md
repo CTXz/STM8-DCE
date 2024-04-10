@@ -38,7 +38,9 @@ $ pip install .
 ## Usage
 
 ```
-usage: stm8dce [-h] -o OUTPUT [-e ENTRY] [-x EXCLUDE [EXCLUDE ...]] [-v] [-d] [--version] [--opt-irq] input [input ...]
+usage: stm8dce [-h] -o OUTPUT [-e ENTRY] [-xf EXCLUDE_FUNCTION [EXCLUDE_FUNCTION ...]] [-xc EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...]] [-v] [-d] [--version] [--opt-irq] input [input ...]
+
+STM8 SDCC dead code elimination tool
 
 positional arguments:
   input                 ASM files to process
@@ -49,12 +51,16 @@ optional arguments:
                         Output directory to store processed ASM files
   -e ENTRY, --entry ENTRY
                         Entry label
-  -x EXCLUDE [EXCLUDE ...], --exclude EXCLUDE [EXCLUDE ...]
+  -xf EXCLUDE_FUNCTION [EXCLUDE_FUNCTION ...], --exclude-function EXCLUDE_FUNCTION [EXCLUDE_FUNCTION ...]
                         Exclude functions
+  -xc EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...], --exclude-constant EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...]
+                        Exclude interrupt handlers
   -v, --verbose         Verbose output
   -d, --debug           Debug output
   --version             show program's version number and exit
   --opt-irq             Remove unused IRQ handlers (Caution: Removes iret's for unused interrupts!)
+
+Example: stm8dce file1.asm file2.asm ... -o output/
 ```
 
 The tool receives a list of SDCC generated assembly files for the STM8 as input and outputs the optimized assembly files to the specified output directory. The tool will remove all unused functions and constants. Additionally the `--opt-irq` flag may be provided to also eliminate unused interrupt handlers.
@@ -99,7 +105,7 @@ However, this optimization comes with a minor "drawback": the tool removes the d
 By default, the tool will assume that the entry label is `_main`. If your entry label is different, you can specify it with the `-e` flag:
 
 ```bash
-$ stm8dce -o output -e _my_entry_label main.asm stm8s_it.asm stm8s_gpio.asm
+$ stm8dce -e _my_entry_label -o output main.asm stm8s_it.asm stm8s_gpio.asm
 ```
 
 #### Exclude Functions and Constants
@@ -107,16 +113,16 @@ $ stm8dce -o output -e _my_entry_label main.asm stm8s_it.asm stm8s_gpio.asm
 If you want to exclude certain functions or constants from being optimized away, you can do so by providing the `-xf <function>` or `-xc <constant>` flags. Note that these must be provided as they are named in the assembly files (i.e. they contain a leading underscore: `hello_world` -> `_hello_world`). This may be useful if you want to keep certain functions or constants for debugging purposes, or if the tool does end up removing code that should not be removed. If the latter is the case, please don't hesitate to open an issue on this repository!
 
 ```bash
-$ stm8dce -o output -xf _my_debug_function -xc _MY_DEBUG_CONSTANT main.asm stm8s_it.asm stm8s_gpio.asm
+$ stm8dce -xf _my_debug_function1 _my_debug_function2 -xc _MY_DEBUG_CONSTANT1 _MY_DEBUG_CONSTANT2 -o output main.asm stm8s_it.asm stm8s_gpio.asm
 ```
 
 In certain cases, there may be multiple local/static functions or constants with the same name in different files. If that is the case, the previous example will generate an error. In this case, you can specify the file name of the function or constant label as well:
 
 ```bash
-$ stm8dce -o output -xf main.asm:_my_debug_function -xc main.asm:_MY_DEBUG_CONSTANT main.asm stm8s_it.asm stm8s_gpio.asm
+$ stm8dce -xf main.asm:_my_debug_function -xc main.asm:_MY_DEBUG_CONSTANT -o output main.asm stm8s_it.asm stm8s_gpio.asm
 ```
 
-##### Verbose Output
+#### Verbose Output
 
 If you want to see which functions and constants have been optimized away, you can provide the `-v` flag:
 
@@ -134,7 +140,7 @@ Removing Constants:
 	...
 ```
 
-##### Debug Output
+#### Debug Output
 
 Debug output can be activated using the `-d` flag, offering verbose output and showcasing the tool's intermediate steps. Note that the output will quickly flood your terminal and is best redirected to a log file instead. Debug output primarily serves developers who wish to contribute to the project. It can also be useful for resolving issues with the tool.
 
