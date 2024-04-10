@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stm8dce"
+version = "0.0.3"
+authors = [
+  { name="Patrick Pedersen", email="ctx.xda@gmail.com" },
+]
+description = "SDCC STM8 Dead Code Elimination Tool"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/CTXz/STM8-DCE"
+Issues = "https://github.com/CTXz/STM8-DCE/issues"
+
+[project.scripts]
+stm8dce = "stm8dce:__main__.main"
