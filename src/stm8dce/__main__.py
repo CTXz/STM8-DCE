@@ -250,9 +250,13 @@ def main():
                         "Please use the format file.asm:label to specify the exact function to exclude"
                     )
                     exit(1)
-                f = f[0]
+                f = f[0] if f else None
 
-            if f and (f not in keepf):
+            if not f:
+                print("Warning: Excluded function not found:", name)
+                continue
+
+            if f not in keepf:
                 if settings.debug:
                     print()
                     print("Traversing excluded function:", name)
@@ -286,7 +290,11 @@ def main():
                         "Please use the format file.asm:label to specify the exact constant to exclude"
                     )
                     exit(1)
-                c = c[0]
+                c = c[0] if c else None
+
+            if not c:
+                print("Warning: Excluded constant not found:", name)
+                continue
 
             if c and (c not in keepc):
                 keepc.append(c)
