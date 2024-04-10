@@ -1,6 +1,4 @@
-# STM8-DCE
-
-SDCC STM8 Dead Code Elimination Tool
+# STM8-DCE - A SDCC STM8 Dead Code Elimination Tool
 
 *Gone are the days of cherry picking the Standard Peripheral Library!*
 
