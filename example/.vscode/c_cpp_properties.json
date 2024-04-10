@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/lib/**",
+                "${workspaceFolder}/lib/STM8S_StdPeriph_Driver/**",
+                "${workspaceFolder}/lib/STM8S_StdPeriph_Driver/inc/**"
+            ],
+            "defines": [],
+            "configurationProvider": "ms-vscode.makefile-tools",
+            "compilerPath": "/usr/local/bin/sdcc"
+        }
+    ],
+    "version": 4
+}
