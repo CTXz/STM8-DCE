@@ -6,9 +6,9 @@
 #define LED_GPIO GPIOB
 #define LED_PIN GPIO_PIN_5
 
-void delay(uint32_t ms)
+void delay(uint32_t n)
 {
-	for (uint32_t i = 0; i < ms; i++)
+	for (uint32_t i = 0; i < n; i++)
 	{
 		__asm__("nop");
 	}
@@ -21,7 +21,7 @@ void main(void)
 	while (TRUE)
 	{
 		GPIO_WriteReverse(LED_GPIO, LED_PIN);
-		delay(100);
+		delay(20000);
 	}
 }
 
