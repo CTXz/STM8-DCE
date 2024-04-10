@@ -88,7 +88,15 @@ def main():
     )
     parser.add_argument("-e", "--entry", help="Entry label", type=str, default="_main")
     parser.add_argument(
-        "-x", "--exclude", help="Exclude functions", type=str, nargs="+"
+        "-xf", "--exclude-function", help="Exclude functions", type=str, nargs="+"
+    )
+    parser.add_argument
+    parser.add_argument(
+        "-xc",
+        "--exclude-constant",
+        help="Exclude interrupt handlers",
+        type=str,
+        nargs="+",
     )
     parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
     parser.add_argument("-d", "--debug", help="Debug output", action="store_true")
@@ -209,7 +217,7 @@ def main():
         print()
         print("Traversing entry function:", args.entry)
         debug.pseperator()
-    keep = [mainf] + analysis.traverse_calls(functions, mainf)
+    keepf = [mainf] + analysis.traverse_calls(functions, mainf)
 
     # Keep interrupt handlers and all of their traversed calls
     # but exclude unused IRQ handlers if opted by the user
@@ -221,11 +229,11 @@ def main():
             print()
             print("Traversing IRQ handler:", ih.name)
             debug.pseperator()
-        keep += [ih] + analysis.traverse_calls(functions, ih)
+        keepf += [ih] + analysis.traverse_calls(functions, ih)
 
     # Keep functions excluded by the user and all of their traversed calls
-    if args.exclude:
-        for name in args.exclude:
+    if args.exclude_function:
+        for name in args.exclude_function:
             filename, name = eval_flabel(name)
             if filename:
                 f = analysis.function_by_filename_name(functions, filename, name)
@@ -233,7 +241,7 @@ def main():
                 f = analysis.functions_by_name(functions, name)
                 if len(f) > 1:
                     print(
-                        "Error: Multiple possible definitions excluded for function:",
+                        "Error: Multiple possible definitions for excluded function:",
                         name,
                     )
                     for f in f:
@@ -244,18 +252,50 @@ def main():
                     exit(1)
                 f = f[0]
 
-            if f and (f not in keep):
+            if f and (f not in keepf):
                 if settings.debug:
                     print()
                     print("Traversing excluded function:", name)
                     debug.pseperator()
-                keep += [f] + analysis.traverse_calls(functions, f)
+                keepf += [f] + analysis.traverse_calls(functions, f)
 
     # Remove duplicates
-    keep = list(set(keep))
+    keepf = list(set(keepf))
 
-    # Remove functions that are not in keep
-    removef = [f for f in functions if f not in keep]
+    # Keep constants loaded by kept functions
+    keepc = []
+    for f in keepf:
+        keepc += f.constants
+
+    # Keep excluded constants
+    if args.exclude_constant:
+        for name in args.exclude_constant:
+            filename, name = eval_flabel(name)
+            if filename:
+                c = analysis.constant_by_filename_name(constants, filename, name)
+            else:
+                c = analysis.constants_by_name(constants, name)
+                if len(c) > 1:
+                    print(
+                        "Error: Multiple possible definitions for excluded constant:",
+                        name,
+                    )
+                    for c in c:
+                        print("In file {}:{}".format(c.path, c.start_line))
+                    print(
+                        "Please use the format file.asm:label to specify the exact constant to exclude"
+                    )
+                    exit(1)
+                c = c[0]
+
+            if c and (c not in keepc):
+                keepc.append(c)
+
+    # Remove duplicates
+    keepc = list(set(keepc))
+
+    # Remove functions that are not in keepf
+    removef = [f for f in functions if f not in keepf]
 
     # Remove global labels assigned to removed functions
     removeg = []
@@ -268,13 +308,8 @@ def main():
         if f.isr_def:
             removei.append(f.isr_def)
 
-    # Remove constants that are not used
-    removec = constants.copy()
-    for c in constants:
-        for f in keep:
-            if c in f.constants:
-                removec.remove(c)
-                break
+    # Remove constants that are not in keepc
+    removec = [c for c in constants if c not in keepc]
 
     # Remove global labels assigned to removed constants
     removeg += [g for c in removec for g in c.global_defs]

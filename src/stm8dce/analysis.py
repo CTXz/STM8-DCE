@@ -317,6 +317,21 @@ def constants_by_name(constants, name):
     return ret
 
 
+# Returns the a list of constant objects matching
+# by filename and name from a list of constants
+def constant_by_filename_name(constants, filename, name):
+    ret = None
+    for c in constants:
+        c_filename = c.path.split("/")[-1]
+        if c_filename == filename and c.name == name:
+            if ret:
+                print("Error: Multiple definitions for constant:", name)
+                print("In file {}:{}".format(c.path, c.start_line))
+                exit(1)
+            ret = c
+    return ret
+
+
 # Traverse all calls made by a function and return a list of
 # all functions
 def traverse_calls(functions, top):
