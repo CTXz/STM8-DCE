@@ -40,7 +40,7 @@ class FileIterator:
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def next(self):
         if self.index < len(self.iterable):
             ret = self.iterable[self.index]
             self.index += 1
@@ -94,7 +94,7 @@ def parse(fileit):
     constants = []
     while True:
         try:
-            line = next(fileit)
+            line = fileit.next()
         except StopIteration:
             break
 
@@ -142,7 +142,7 @@ def parse_code_section(fileit):
     functions = []
     while True:
         try:
-            line = next(fileit)
+            line = fileit.next()
         except StopIteration:
             break
 
@@ -168,7 +168,7 @@ def parse_const_section(fileit):
     constants = []
     while True:
         try:
-            line = next(fileit)
+            line = fileit.next()
         except StopIteration:
             break
 
@@ -200,7 +200,7 @@ def parse_function(fileit, label):
     ret = analysis.Function(fileit.path, label, fileit.index)
     while True:
         try:
-            line = next(fileit)
+            line = fileit.next()
         except StopIteration:
             break
 
@@ -260,7 +260,7 @@ def parse_constant(fileit, label):
     ret = analysis.Constant(fileit.path, label, fileit.index)
     while True:
         try:
-            line = next(fileit)
+            line = fileit.next()
         except StopIteration:
             break
 
