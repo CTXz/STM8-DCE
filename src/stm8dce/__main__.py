@@ -14,28 +14,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # SDCC STM8 Dead Code Elimination Tool
-# Description: Accepts a list of SDCC generated ASM files for the
-#              STM8 and removes unused functions from the code.
-#
-# Note: This tool still requires some more testing! Use at your own risk!
+# Description: Main file for the STM8 SDCC dead code elimination tool.
 
-# This tool has been largely inspired by XaviDCR92's sdccrm tool:
-#   https://github.com/XaviDCR92/sdccrm
+# Credits: This tool has been largely inspired by XaviDCR92's sdccrm tool:
+#          https://github.com/XaviDCR92/sdccrm
 #
-# Due to sdccrm's deprecated status, it was written from scratch rather
-# than being a fork of sdccrm. It aims to be more compatible with newer
-# versions of SDCC (currently tested with 4.4.1) and attempts to provide
-# a couple more improvements (e.g., IRQ handler detection). Additionally,
-# the tool is written in Python, which I personally find to be more suitable
-# for pattern matching and text processing tasks.
-#
-# XaviDCR92's sdccrm tool has been deprecated in favor of using their GNU Assembly-compatible
-# SDCC fork for the STM8 along with their stm8-binutils fork to perform linking-time dead code
-# elimination. I found that approach to sound good in theory, but in practice, the implementation
-# comes with numerous flaws, such as being incompatible with newer versions of SDCC, and the
-# fact that SDCC's standard library has to be compiled manually. Even once the standard library
-# has been compiled, it uses platform-independent C code, which is not as optimized as the platform-
-# specific assembly functions tailored for the STM8.
 
 import os
 import argparse
@@ -57,7 +40,7 @@ from .__init__ import __version__
 # Evaluate a function label for exclusion
 # User can either specify function label
 # as is (ex. _hello), or with its filename
-# (ex. file.asm:_hello) to allow exclusiong
+# (ex. file.asm:_hello) to allow exclusion
 # for cases where multiple functions have
 # the same name
 # Returns a tuple of filename and name
@@ -123,7 +106,6 @@ def main():
         exit(1)
 
     # Copy all files to args.output directory
-    # input are files seperated by space
     for file in args.input:
         shutil.copy(file, args.output)
 
@@ -131,9 +113,11 @@ def main():
     # ASM Parsing
     # ==========================================
 
-    # Parse all asm files for functions
-    # functions is a list of Function objects and
-    # globals is a list of GlobalDef objects
+    # Parse all asm files for globals, interrupts, functions and constants
+    # - globals is a list of GlobalDef objects
+    # - interrupts is a list of IntDef objects
+    # - functions is a list of Function objects
+    # - constants is a list of Constant objects
     globals = []
     interrupts = []
     functions = []
@@ -356,7 +340,7 @@ def main():
     # Dead Code Removal
     # ==========================================
 
-    # Group functions, globals, int defs andconstants by file to reduce file I/O
+    # Group functions, globals, int defs and constants by file to reduce file I/O
     filef = {}
     fileg = {}
     filei = {}
