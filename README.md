@@ -84,7 +84,7 @@ Example: stm8dce file1.asm file2.asm ... -o output/
 
 The tool receives a list of SDCC generated assembly files for the STM8 as input and outputs the optimized assembly files to the specified output directory. The tool will remove all unused functions and constants. Additionally the `--opt-irq` flag may be provided to also eliminate unused interrupt handlers.
 
-> Note: Optimizing away interrupt handlers will strip away their default behaiour of returning from the interrupt. This means, if a unused interrupt handler is accidentally triggered, the STM8 will likely crash. Use this feature with caution and ensure that only handled interrupts are enabled in your firmware!
+> Note: Optimizing away interrupt handlers will strip away their default behaivour of returning from the interrupt. This means, if a unused interrupt handler is accidentally triggered, the STM8 will likely crash. Use this feature with caution and ensure that only handled interrupts are enabled in your firmware!
 
 ### Examples
 

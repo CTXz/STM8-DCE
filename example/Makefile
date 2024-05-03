@@ -79,7 +79,7 @@ INCLUDE += -Ilib/STM8S_StdPeriph_Driver/inc
 
 # Comment/Uncomment according to your STM8S variant
 # Which peripherals apply to your STM8S variant can be found out
-# by looking at the STM8S_StdPeriph_Driver/inc/stm8s.h file or
+# by looking at the STM8S_StdPeriph_Driver/inc/stm8s.h file
 
 STDPER_SRC 	+= stm8s_adc1.c
 # STDPER_SRC 	+= stm8s_adc2.c
