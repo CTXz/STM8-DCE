@@ -135,6 +135,8 @@ def is_int_def(line):
 #   - Start with 'ld' or 'ldw' or 'ldf'
 #   - Dst (Left) and src (Right) are separated by ','
 #   - Src must contain a label appended with a + and a number (e.g., _label+1)
+# Note that this pattern match does not care how the label is referenced (immidiate vs indirect)
+# This means, both 'ldw x, #(_label+0)' and 'ldw x, _label+0' will match
 def is_load_src_label(line):
     sline = remove_comments(line.strip())
     if not (

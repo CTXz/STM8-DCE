@@ -72,6 +72,7 @@ class IntDef:
 #  - Path of the file the function is defined in
 #  - Name of the function
 #  - List of calls made by the function
+#  - List of function pointers loaded by the function
 #  - Start line of the function
 #  - End line of the function
 #  - Global definition/label assinged to the function
@@ -88,6 +89,7 @@ class Function:
         self.start_line = start_line
         self.end_line = None
         self.global_defs = []
+        self.fptrs = []
         self.isr_def = None
         self.empty = True
 
@@ -193,6 +195,23 @@ class Function:
                                     f.start_line,
                                 )
                             )
+
+    def resolve_fptrs(self, functions):
+        for l in self.mem_loads_str:
+            for f in functions:
+                if f.name == l:
+                    self.fptrs.append(f)
+                    if settings.debug:
+                        print(
+                            "Function {} in {}:{} assigns function pointer to {} in {}:{}".format(
+                                self.name,
+                                self.path,
+                                self.start_line,
+                                f.name,
+                                f.path,
+                                f.start_line,
+                            )
+                        )
 
     def resolve_constants(self, constants):
         for c in self.mem_loads_str:

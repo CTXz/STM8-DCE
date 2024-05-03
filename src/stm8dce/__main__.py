@@ -177,6 +177,15 @@ def main():
     for f in functions:
         f.resolve_calls(functions)
 
+    # Resolve function pointers
+    if settings.debug:
+        print()
+        print("Resolving function pointers")
+        debug.pseperator()
+
+    for f in functions:
+        f.resolve_fptrs(functions)
+
     # Resolve globals assigned to constants
     if settings.debug:
         print()
@@ -218,6 +227,16 @@ def main():
         print("Traversing entry function:", args.entry)
         debug.pseperator()
     keepf = [mainf] + analysis.traverse_calls(functions, mainf)
+
+    # Keep functions assigned to a function pointer
+    for f in functions:
+        for fp in f.fptrs:
+            if fp not in keepf:
+                if settings.debug:
+                    print()
+                    print("Traversing function assigned to function pointer:", fp.name)
+                    debug.pseperator()
+                keepf += [fp] + analysis.traverse_calls(functions, fp)
 
     # Keep interrupt handlers and all of their traversed calls
     # but exclude unused IRQ handlers if opted by the user

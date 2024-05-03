@@ -29,12 +29,13 @@ This tool has been largely inspired by [@XaviDCR92's sdccrm tool](https://github
 - Removes unused constants
 - Removes unused interrupt handlers (if `--opt-irq` is provided)
 - Is capable of distinguishing between global and local/static labels
+- Detects function pointers and keeps functions that are assigned to a function pointer
 
 Due to [sdccrm's](https://github.com/XaviDCR92/sdccrm) deprecated status and my personal preference for Python over C for pattern matching and text processing, I chose to develop the tool completely from scratch instead of forking [sdccrm](https://github.com/XaviDCR92/sdccrm).
 
 ## Issues
 
-This tool has **not been tested with debug information enabled**. Enabling debug information will likely optimize significantly less code and probably mess with debug symbols. IRQ handlers will certainly also not be optimized away as they will no longer be detected as unused with debug related symbols present in their code.
+This tool has **not been tested with debug information enabled**. Enabling debug information will likely optimize significantly less code and probably mess with debug symbols.
 
 ## Disclaimer
 
@@ -168,7 +169,7 @@ $ stm8dce -d -o output main.asm stm8s_it.asm stm8s_gpio.asm > debug.log
 
 ## What about XaviDCR92's sdcc-gas fork
 
-@XaviDCR92's [sdccrm](https://github.com/XaviDCR92/sdccrm) tool, which this project took inspiration from, has been deprecated in favor of using their [GNU Assembly-compatible SDCC fork](https://github.com/XaviDCR92/sdcc-gas) for the STM8 along with their [stm8-binutils](https://github.com/XaviDCR92/stm8-binutils-gdb) fork to perform linking-time dead code elimination. I found that approach to sound good in theory, but in practice, the implementation comes with numerous issues, such as being incompatible with newer versions of SDCC, and the fact that SDCC's standard library has to be compiled manually if one requires it. [Even once the standard library has been compiled, it uses platform-independent C code, which is not as optimized as the platform- specific assembly functions tailored for the STM8.](https://github.com/XaviDCR92/stm8-dce-example/issues/2). I believe all of this mostly boils down to the fact that the SDCC fork's changes are not eligible for merging into the main SDCC repository, making it difficult to maintain and somewhat akward to use.
+@XaviDCR92's [sdccrm](https://github.com/XaviDCR92/sdccrm) tool, which this project took inspiration from, has been deprecated in favor of using their [GNU Assembly-compatible SDCC fork](https://github.com/XaviDCR92/sdcc-gas) for the STM8 along with their [stm8-binutils](https://github.com/XaviDCR92/stm8-binutils-gdb) fork to perform linking-time dead code elimination. I found that approach to sound good in theory, but in practice, the implementation comes with numerous issues, such as being incompatible with newer versions of SDCC, and the fact that SDCC's standard library has to be compiled manually if one requires it. [Even once the standard library has been compiled, it uses platform-independent C code, which is not as optimized as the platform- specific assembly functions tailored for the STM8](https://github.com/XaviDCR92/stm8-dce-example/issues/2). I believe all of this mostly boils down to the fact that the SDCC fork's changes are not eligible for merging into the main SDCC repository, making it difficult to maintain and somewhat akward to use.
 
 ## How the tool works
 

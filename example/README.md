@@ -1,6 +1,6 @@
 # STM8DCE Example <!-- omit in toc -->
 
-This example demonstrates the STM8DCE tool on a simply blinky project targeting the STM8S103 microcontroller. To truly showcase the effectiveness of the dead code elimination, this example builds **all** STM8S103 compatible modules from the STM8S Standard Peripheral Library. Without DCE, this would undoubtedly result in a binary size that exceeds the STM8S103's 8KB flash limit.
+This example demonstrates the STM8DCE tool on a simply blinky project targeting the STM8S103 microcontroller. To truly showcase the effectiveness of the dead code elimination, this example builds **all** STM8S103-compatible modules from the STM8S Standard Peripheral Library. Without DCE, this would undoubtedly result in a binary size that exceeds the STM8S103's 8KB flash limit.
 
 ## Table of Contents <!-- omit in toc -->
 - [Pre-requisites](#pre-requisites)
@@ -27,7 +27,7 @@ and obviously the STM8DCE tool which can be found at the top of this repository!
 
 ## Building
 
-We'll now go through all manual steps to build the project. The `Makefile` in this repository automates these steps, but it is advantageous to understand every step you wish to integrate STM8DCE into your own build environment.
+We'll now go through all manual steps to build the project. The `Makefile` in this repository automates these steps, but it is advantageous to understand every step should you wish to integrate STM8DCE into your own build environment.
 
 ### Generating the Assembly Files
 
@@ -84,7 +84,7 @@ Now we can run the STM8DCE tool on the assembly files. We'll use the `-v` flag t
 stm8dce -v -o build/dce build/asm/*.asm
 ```
 
-Here's the output we get (truncated for brevity):
+Here is a truncated output for brevity:
 ```
 Removing Functions:
         _TIM1_DeInit - build/dce/stm8s_tim1.asm:127
@@ -125,7 +125,7 @@ We'll first create a new directory to store the object files:
 mkdir -p build/obj/
 ```
 
-When the assemble the Standard Peripheral Library:
+We then assemble the Standard Peripheral Library:
 ```bash 
 sdasstm8 -plosg -ff -o build/obj/stm8s_adc1.rel build/dce/stm8s_adc1.asm && \
 sdasstm8 -plosg -ff -o build/obj/stm8s_awu.rel build/dce/stm8s_awu.asm && \
