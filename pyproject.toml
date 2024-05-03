@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "stm8dce"
-version = "0.0.3"
+version = "1.0.0"
 authors = [
   { name="Patrick Pedersen", email="ctx.xda@gmail.com" },
 ]
