@@ -39,7 +39,7 @@ This tool has **not been tested with debug information enabled**. Enabling debug
 
 ## Disclaimer
 
-Please note that this tool is still in early development and has not been thoroughly tested yet. So far, I have only tested it on numerous of my own projects where the tool seems to deliver the expected results. That being said, I may have overlooked certain edge cases which could in the very worst case lead to the tool removing code that should not be removed. Hence, proceed with caution!
+Please note that this tool is still in early development and has not been thoroughly tested yet. So far, I have only tested it on numerous of my own projects where the tool delivers the expected results. That being said, I may have overlooked certain edge cases which could in the very worst case lead to the tool removing code that should not be removed. Hence, proceed with caution!
 
 ## Installation
 
@@ -88,7 +88,7 @@ The tool receives a list of SDCC generated assembly files for the STM8 as input 
 
 ### Examples
 
-For a practical demonstration, check out the [example](example/) directory in this repository. It features a straightforward Test project designed for the STM8S103, complete with a Makefile and a comprehensive README.md that walks you through the entire process: from compiling your project into assembly files, to optimizing them with `stm8dce`, and finally assembling and linking them together into an elf and ihx file. The project also includes all STM8S103-compatible modules from the SPL to really showcase the tools capability. Without DCE, incorporating all modules would quickly surpass the STM8S103's flash memory capacity.
+For a practical demonstration, check out the [example](example/) directory in this repository. It features a straightforward Test project designed for the STM8S103, complete with a Makefile and a comprehensive README that walks you through the entire process: from compiling your project into assembly files, to optimizing them with `stm8dce`, and finally assembling and linking them together into an elf and ihx file. The project also includes all STM8S103-compatible modules from the SPL to really showcase the tools capability. Without DCE, incorporating all modules would quickly surpass the STM8S103's flash memory capacity.
 
 For a quick demonstration however, the following examples will suffice:
 
