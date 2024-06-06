@@ -45,13 +45,12 @@ Please note that this tool is still in early development and has not been thorou
 
 The tool has been written in Python 3 and will be available on PyPi once further testing has been done.
 
-Until then, you can clone the repository, build the package and install it manually:
+Until then, you can clone the repository, and install it manually:
 
 ```bash
 $ git clone https://github.com/CTXz/STM8-DCE.git
 $ cd STM8-DCE
-$ python3 -m build
-$ pip install .
+$ python3 -m pip install .
 ```
 
 ## Usage
