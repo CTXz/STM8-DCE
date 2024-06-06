@@ -33,6 +33,16 @@ from . import settings
 from .__init__ import __version__
 
 ############################################
+# Constants
+############################################
+
+# List of functions that SDCC may require
+SDCC_REQ = [
+    "_getchar", # See 3.14.2 of the SDCC manual
+    "_putchar" # See 3.14.2 of the SDCC manual
+]
+
+############################################
 # Arg Parsing
 ############################################
 
@@ -265,6 +275,31 @@ def main():
                     print("Traversing excluded function:", name)
                     debug.pseperator()
                 keepf += [f] + analysis.traverse_calls(functions, f)
+
+    # Do not exclude functions that may be required by SDCC
+    for name in SDCC_REQ:
+        f = analysis.functions_by_name(functions, name)
+
+        if not f:
+            continue
+
+        if len(f) > 1:
+            print(
+                "Error: Multiple possible definitions for SDCC required function:",
+                name,
+            )
+            for f in f:
+                print("In file {}:{}".format(f.path, f.start_line))
+            exit(1)
+
+        f = f[0]
+        
+        if f not in keepf:
+            if settings.debug:
+                print()
+                print("Traversing SDCC required function:", name)
+                debug.pseperator()
+            keepf += [f] + analysis.traverse_calls(functions, f)
 
     # Remove duplicates
     keepf = list(set(keepf))
