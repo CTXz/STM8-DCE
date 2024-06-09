@@ -243,7 +243,7 @@ def parse_function(fileit, label):
         if not match:
             continue
 
-        op, label = match
+        op, l = match
 
         if op == "call":
             continue  # Already handled explicitly above
@@ -251,12 +251,12 @@ def parse_function(fileit, label):
         if settings.debug:
             print(
                 "Line {} ({}): long address label {} is read here".format(
-                    fileit.index, op, label
+                    fileit.index, op, l
                 )
             )
 
-        if label not in ret.long_read_labels_str:
-            ret.long_read_labels_str.append(label)
+        if l not in ret.long_read_labels_str:
+            ret.long_read_labels_str.append(l)
             continue
 
     if settings.debug:
