@@ -84,7 +84,7 @@ class Function:
         self.name = name
         self.calls_str = []
         self.calls = []
-        self.mem_loads_str = []
+        self.long_read_labels_str = []
         self.constants = []
         self.start_line = start_line
         self.end_line = None
@@ -103,7 +103,6 @@ class Function:
         print("Function:", self.name)
         print("File:", self.path)
         print("Calls:", self.calls_str)
-        print("Loads:", self.loads)
         print("Start line:", self.start_line)
         print("End line:", self.end_line)
         print("IRQ Handler:", self.isr)
@@ -197,7 +196,7 @@ class Function:
                             )
 
     def resolve_fptrs(self, functions):
-        for l in self.mem_loads_str:
+        for l in self.long_read_labels_str:
             for f in functions:
                 if f.name == l:
                     self.fptrs.append(f)
@@ -214,7 +213,7 @@ class Function:
                         )
 
     def resolve_constants(self, constants):
-        for c in self.mem_loads_str:
+        for c in self.long_read_labels_str:
             consts = constants_by_name(constants, c)
 
             glob = False
@@ -232,7 +231,7 @@ class Function:
                 self.constants.append(consts[0])
                 if settings.debug:
                     print(
-                        "Function {} in {}:{} loads global constant {} in {}:{}".format(
+                        "Function {} in {}:{} reads global constant {} in {}:{}".format(
                             self.name,
                             self.path,
                             self.start_line,
@@ -247,7 +246,7 @@ class Function:
                         self.constants.append(c)
                         if settings.debug:
                             print(
-                                "Function {} in {}:{} loads local constant {} in {}:{}".format(
+                                "Function {} in {}:{} reads local constant {} in {}:{}".format(
                                     self.name,
                                     self.path,
                                     self.start_line,

@@ -38,8 +38,8 @@ from .__init__ import __version__
 
 # List of functions that SDCC may require
 SDCC_REQ = [
-    "_getchar", # See 3.14.2 of the SDCC manual
-    "_putchar" # See 3.14.2 of the SDCC manual
+    "_getchar",  # See 3.14.2 of the SDCC manual
+    "_putchar",  # See 3.14.2 of the SDCC manual
 ]
 
 ############################################
@@ -293,7 +293,7 @@ def main():
             exit(1)
 
         f = f[0]
-        
+
         if f not in keepf:
             if settings.debug:
                 print()

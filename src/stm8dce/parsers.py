@@ -237,12 +237,26 @@ def parse_function(fileit, label):
             ret.calls_str.append(call)
             continue
 
-        # Keep track of loads with labels as src (these are likely constants)
-        load = matchers.is_load_src_label(line)
-        if load and (load not in ret.mem_loads_str):
-            if settings.debug:
-                print("Line {}: Load with label as src {}".format(fileit.index, load))
-            ret.mem_loads_str.append(load)
+        # Keep track of labels read by long address capable instructions
+        match = matchers.is_long_label_read(line)
+
+        if not match:
+            continue
+
+        op, label = match
+
+        if op == "call":
+            continue  # Already handled explicitly above
+
+        if settings.debug:
+            print(
+                "Line {} ({}): long address label {} is read here".format(
+                    fileit.index, op, label
+                )
+            )
+
+        if label not in ret.long_read_labels_str:
+            ret.long_read_labels_str.append(label)
             continue
 
     if settings.debug:
