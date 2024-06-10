@@ -108,7 +108,7 @@ def parse_file(file):
     """
     if settings.debug:
         print()
-        print("Parsing file:", file)
+        print(f"Parsing file: {file}")
         debug.pseperator()
 
     with open(file, "r") as f:
@@ -152,7 +152,7 @@ def parse(fileit):
             globals.append(analysis.GlobalDef(fileit.path, global_defs, fileit.index))
 
             if settings.debug:
-                print("Line {}: Global definition {}".format(fileit.index, global_defs))
+                print(f"Line {fileit.index}: Global definition {global_defs}")
 
             continue
 
@@ -162,7 +162,7 @@ def parse(fileit):
             interrupts.append(analysis.IntDef(fileit.path, int_def, fileit.index))
 
             if settings.debug:
-                print("Line {}: Interrupt definition {}".format(fileit.index, int_def))
+                print(f"Line {fileit.index}: Interrupt definition {int_def}")
 
             continue
 
@@ -193,7 +193,7 @@ def parse_code_section(fileit):
         list: A list of Function objects.
     """
     if settings.debug:
-        print("Line {}: Code section starts here".format(fileit.index))
+        print(f"Line {fileit.index}: Code section starts here")
 
     functions = []
     while True:
@@ -214,7 +214,7 @@ def parse_code_section(fileit):
             functions += [parse_function(fileit, flabel)]
 
     if settings.debug:
-        print("Line {}: Code section ends here".format(fileit.index))
+        print(f"Line {fileit.index}: Code section ends here")
 
     return functions
 
@@ -234,7 +234,7 @@ def parse_const_section(fileit):
         list: A list of Constant objects.
     """
     if settings.debug:
-        print("Line {}: Constants section starts here".format(fileit.index))
+        print(f"Line {fileit.index}: Constants section starts here")
 
     constants = []
     while True:
@@ -255,7 +255,7 @@ def parse_const_section(fileit):
             constants += [parse_constant(fileit, clabel)]
 
     if settings.debug:
-        print("Line {}: Constants section ends here".format(fileit.index))
+        print(f"Line {fileit.index}: Constants section ends here")
 
     return constants
 
@@ -278,7 +278,7 @@ def parse_function(fileit, label):
         Function: The parsed Function object.
     """
     if settings.debug:
-        print("Line {}: Function {} starts here".format(fileit.index, label))
+        print(f"Line {fileit.index}: Function {label} starts here")
 
     ret = analysis.Function(fileit.path, label, fileit.index)
     while True:
@@ -294,11 +294,7 @@ def parse_function(fileit, label):
         # Check if this is an IRQ handler
         if matchers.is_iret(line):
             if settings.debug:
-                print(
-                    "Line {}: Function {} detected as IRQ Handler".format(
-                        fileit.index, label
-                    )
-                )
+                print(f"Line {fileit.index}: Function {label} detected as IRQ Handler")
             ret.isr = True
             continue
 
@@ -316,7 +312,7 @@ def parse_function(fileit, label):
         call = matchers.is_call(line)
         if call:
             if settings.debug:
-                print("Line {}: Call to {}".format(fileit.index, call))
+                print(f"Line {fileit.index}: Call to {call}")
             if call not in ret.calls_str:
                 ret.calls_str.append(call)
             continue
@@ -330,9 +326,7 @@ def parse_function(fileit, label):
             for l in lbls:
                 if settings.debug:
                     print(
-                        "Line {} ({}): long address label {} is read here".format(
-                            fileit.index, op, l
-                        )
+                        f"Line {fileit.index} ({op}): long address label {l} is read here"
                     )
                 if l not in ret.long_read_labels_str:
                     ret.long_read_labels_str.append(l)
@@ -340,8 +334,8 @@ def parse_function(fileit, label):
 
     if settings.debug:
         if ret.empty:
-            print("Line {}: Function {} is empty!".format(fileit.index, label))
-        print("Line {}: Function {} ends here".format(fileit.index, label))
+            print(f"Line {fileit.index}: Function {label} is empty!")
+        print(f"Line {fileit.index}: Function {label} ends here")
 
     return ret
 
@@ -358,7 +352,7 @@ def parse_constant(fileit, label):
         Constant: The parsed Constant object.
     """
     if settings.debug:
-        print("Line {}: Constant {} starts here".format(fileit.index, label))
+        print(f"Line {fileit.index}: Constant {label} starts here")
 
     ret = analysis.Constant(fileit.path, label, fileit.index)
     while True:
@@ -379,6 +373,6 @@ def parse_constant(fileit, label):
             break
 
     if settings.debug:
-        print("Line {}: Constant {} ends here".format(fileit.index, label))
+        print(f"Line {fileit.index}: Constant {label} ends here")
 
     return ret

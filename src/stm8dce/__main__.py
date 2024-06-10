@@ -121,7 +121,7 @@ def main():
 
     # Check if output directory exists
     if not os.path.exists(args.output):
-        print("Error: Output directory does not exist:", args.output)
+        print(f"Error: Output directory does not exist: {args.output}")
         exit(1)
 
     # Copy all files to args.output directory
@@ -214,12 +214,12 @@ def main():
     # Get entry function object
     mainf = analysis.functions_by_name(functions, args.entry)
     if not mainf:
-        print("Error: Entry label not found:", args.entry)
+        print(f"Error: Entry label not found: {args.entry}")
         exit(1)
     elif len(mainf) > 1:
-        print("Error: Multiple definitions for entry label:", args.entry)
+        print(f"Error: Multiple definitions for entry label: {args.entry}")
         for f in mainf:
-            print("In file {}:{}".format(f.path, f.start_line))
+            print(f"In file {f.path}:{f.start_line}")
         exit(1)
 
     mainf = mainf[0]
@@ -227,7 +227,7 @@ def main():
     # Keep main function and all of its traversed calls
     if settings.debug:
         print()
-        print("Traversing entry function:", args.entry)
+        print(f"Traversing entry function: {args.entry}")
         debug.pseperator()
     keepf = [mainf] + analysis.traverse_calls(functions, mainf)
 
@@ -237,7 +237,9 @@ def main():
             if fp not in keepf:
                 if settings.debug:
                     print()
-                    print("Traversing function assigned to function pointer:", fp.name)
+                    print(
+                        f"Traversing function assigned to function pointer: {fp.name}"
+                    )
                     debug.pseperator()
                 keepf += [fp] + analysis.traverse_calls(functions, fp)
 
@@ -249,7 +251,7 @@ def main():
             continue
         if settings.debug:
             print()
-            print("Traversing IRQ handler:", ih.name)
+            print(f"Traversing IRQ handler: {ih.name}")
             debug.pseperator()
         keepf += [ih] + analysis.traverse_calls(functions, ih)
 
@@ -263,11 +265,10 @@ def main():
                 f = analysis.functions_by_name(functions, name)
                 if len(f) > 1:
                     print(
-                        "Error: Multiple possible definitions for excluded function:",
-                        name,
+                        f"Error: Multiple possible definitions for excluded function: {name}"
                     )
                     for f in f:
-                        print("In file {}:{}".format(f.path, f.start_line))
+                        print(f"In file {f.path}:{f.start_line}")
                     print(
                         "Please use the format file.asm:label to specify the exact function to exclude"
                     )
@@ -275,13 +276,13 @@ def main():
                 f = f[0] if f else None
 
             if not f:
-                print("Warning: Excluded function not found:", name)
+                print(f"Warning: Excluded function not found: {name}")
                 continue
 
             if f not in keepf:
                 if settings.debug:
                     print()
-                    print("Traversing excluded function:", name)
+                    print(f"Traversing excluded function: {name}")
                     debug.pseperator()
                 keepf += [f] + analysis.traverse_calls(functions, f)
 
@@ -294,11 +295,10 @@ def main():
 
         if len(f) > 1:
             print(
-                "Error: Multiple possible definitions for SDCC required function:",
-                name,
+                f"Error: Multiple possible definitions for SDCC required function: {name}"
             )
             for f in f:
-                print("In file {}:{}".format(f.path, f.start_line))
+                print(f"In file {f.path}:{f.start_line}")
             exit(1)
 
         f = f[0]
@@ -306,7 +306,7 @@ def main():
         if f not in keepf:
             if settings.debug:
                 print()
-                print("Traversing SDCC required function:", name)
+                print(f"Traversing SDCC required function: {name}")
                 debug.pseperator()
             keepf += [f] + analysis.traverse_calls(functions, f)
 
@@ -328,11 +328,10 @@ def main():
                 c = analysis.constants_by_name(constants, name)
                 if len(c) > 1:
                     print(
-                        "Error: Multiple possible definitions for excluded constant:",
-                        name,
+                        f"Error: Multiple possible definitions for excluded constant: {name}"
                     )
                     for c in c:
-                        print("In file {}:{}".format(c.path, c.start_line))
+                        print(f"In file {c.path}:{c.start_line}")
                     print(
                         "Please use the format file.asm:label to specify the exact constant to exclude"
                     )
@@ -340,7 +339,7 @@ def main():
                 c = c[0] if c else None
 
             if not c:
-                print("Warning: Excluded constant not found:", name)
+                print(f"Warning: Excluded constant not found: {name}")
                 continue
 
             if c and (c not in keepc):
@@ -373,11 +372,11 @@ def main():
         print()
         print("Removing Functions:")
         for f in removef:
-            print("\t{} - {}:{}".format(f.name, f.path, f.start_line))
+            print(f"\t{f.name} - {f.path}:{f.start_line}")
         print()
         print("Removing Constants:")
         for c in removec:
-            print("\t{} - {}:{}".format(c.name, c.path, c.start_line))
+            print(f"\t{c.name} - {c.path}:{c.start_line}")
         print()
 
     # ==========================================
@@ -425,7 +424,7 @@ def main():
         # entry!
         if file in filei:
             for i in filei[file]:
-                lines[i.line - 1] = "	int 0x000000\n"
+                lines[i.line - 1] = "    int 0x000000\n"
             filei[file].remove(i)
 
         # Functions
@@ -464,7 +463,7 @@ def main():
             lines = f.readlines()
 
         for i in filei[file]:
-            lines[i.line - 1] = "	int 0x000000\n"
+            lines[i.line - 1] = "    int 0x000000\n"
 
         with open(file, "w") as f:
             f.writelines(lines)
@@ -486,16 +485,8 @@ def main():
     # ==========================================
 
     print("Detected and removed:")
-    print(
-        "{} unused functions from a total of {} functions".format(
-            len(removef), len(functions)
-        )
-    )
-    print(
-        "{} unused constants from a total of {} constants".format(
-            len(removec), len(constants)
-        )
-    )
+    print(f"{len(removef)} unused functions from a total of {len(functions)} functions")
+    print(f"{len(removec)} unused constants from a total of {len(constants)} constants")
 
 
 if __name__ == "__main__":
