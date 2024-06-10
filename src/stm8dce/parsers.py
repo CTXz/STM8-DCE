@@ -231,32 +231,30 @@ def parse_function(fileit, label):
 
         # Keep track of calls made by this function
         call = matchers.is_call(line)
-        if call and (call not in ret.calls_str):
-            if settings.debug:
-                print("Line {}: Call to {}".format(fileit.index, call))
-            ret.calls_str.append(call)
+        if call:
+            if call not in ret.calls_str:
+                if settings.debug:
+                    print("Line {}: Call to {}".format(fileit.index, call))
+                ret.calls_str.append(call)
             continue
 
         # Keep track of labels read by long address capable instructions
+        # Note that calls are excluded from this list as they are already
+        # handled above
         match = matchers.is_long_label_read(line)
+        if match:
+            op, l = match
 
-        if not match:
-            continue
-
-        op, l = match
-
-        if op == "call":
-            continue  # Already handled explicitly above
-
-        if settings.debug:
-            print(
-                "Line {} ({}): long address label {} is read here".format(
-                    fileit.index, op, l
+            if settings.debug:
+                print(
+                    "Line {} ({}): long address label {} is read here".format(
+                        fileit.index, op, l
+                    )
                 )
-            )
 
-        if l not in ret.long_read_labels_str:
-            ret.long_read_labels_str.append(l)
+            if l not in ret.long_read_labels_str:
+                ret.long_read_labels_str.append(l)
+
             continue
 
     if settings.debug:
