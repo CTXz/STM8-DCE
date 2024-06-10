@@ -315,9 +315,9 @@ def parse_function(fileit, label):
         # Keep track of calls made by this function
         call = matchers.is_call(line)
         if call:
+            if settings.debug:
+                print("Line {}: Call to {}".format(fileit.index, call))
             if call not in ret.calls_str:
-                if settings.debug:
-                    print("Line {}: Call to {}".format(fileit.index, call))
                 ret.calls_str.append(call)
             continue
 
