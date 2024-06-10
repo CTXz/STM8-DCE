@@ -106,10 +106,9 @@ def parse_file(file_path):
     Returns:
         tuple: A tuple containing lists of global definitions, interrupt definitions, constants, and functions.
     """
-    if settings.debug:
-        print()
-        print(f"Parsing file: {file_path}")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg(f"Parsing file: {file_path}")
+    debug.pseperator()
 
     with open(file_path, "r") as file_obj:
         file_iterator = FileIterator(file_obj)
@@ -152,10 +151,7 @@ def parse(file_iterator):
             globals_list.append(
                 analysis.GlobalDef(file_iterator.path, global_defs, file_iterator.index)
             )
-
-            if settings.debug:
-                print(f"Line {file_iterator.index}: Global definition {global_defs}")
-
+            debug.pdbg(f"Line {file_iterator.index}: Global definition {global_defs}")
             continue
 
         # Interrupt definitions
@@ -164,10 +160,7 @@ def parse(file_iterator):
             interrupts_list.append(
                 analysis.IntDef(file_iterator.path, int_def, file_iterator.index)
             )
-
-            if settings.debug:
-                print(f"Line {file_iterator.index}: Interrupt definition {int_def}")
-
+            debug.pdbg(f"Line {file_iterator.index}: Interrupt definition {int_def}")
             continue
 
         # Code section
@@ -196,8 +189,7 @@ def parse_code_section(file_iterator):
     Returns:
         list: A list of Function objects.
     """
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Code section starts here")
+    debug.pdbg(f"Line {file_iterator.index}: Code section starts here")
 
     functions_list = []
     while True:
@@ -217,8 +209,7 @@ def parse_code_section(file_iterator):
         if function_label:
             functions_list += [parse_function(file_iterator, function_label)]
 
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Code section ends here")
+    debug.pdbg(f"Line {file_iterator.index}: Code section ends here")
 
     return functions_list
 
@@ -237,8 +228,7 @@ def parse_const_section(file_iterator):
     Returns:
         list: A list of Constant objects.
     """
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Constants section starts here")
+    debug.pdbg(f"Line {file_iterator.index}: Constants section starts here")
 
     constants_list = []
     while True:
@@ -258,8 +248,7 @@ def parse_const_section(file_iterator):
         if constant_label:
             constants_list += [parse_constant(file_iterator, constant_label)]
 
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Constants section ends here")
+    debug.pdbg(f"Line {file_iterator.index}: Constants section ends here")
 
     return constants_list
 
@@ -281,8 +270,7 @@ def parse_function(file_iterator, label):
     Returns:
         Function: The parsed Function object.
     """
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Function {label} starts here")
+    debug.pdbg(f"Line {file_iterator.index}: Function {label} starts here")
 
     ret_function = analysis.Function(file_iterator.path, label, file_iterator.index)
     while True:
@@ -297,10 +285,9 @@ def parse_function(file_iterator, label):
 
         # Check if this is an IRQ handler
         if matchers.is_iret(current_line):
-            if settings.debug:
-                print(
-                    f"Line {file_iterator.index}: Function {label} detected as IRQ Handler"
-                )
+            debug.pdbg(
+                f"Line {file_iterator.index}: Function {label} detected as IRQ Handler"
+            )
             ret_function.isr = True
             continue
 
@@ -317,8 +304,7 @@ def parse_function(file_iterator, label):
         # Keep track of calls made by this function
         call_match = matchers.is_call(current_line)
         if call_match:
-            if settings.debug:
-                print(f"Line {file_iterator.index}: Call to {call_match}")
+            debug.pdbg(f"Line {file_iterator.index}: Call to {call_match}")
             if call_match not in ret_function.calls_str:
                 ret_function.calls_str.append(call_match)
             continue
@@ -330,18 +316,16 @@ def parse_function(file_iterator, label):
         if match_long_label_read:
             operation, long_labels = match_long_label_read
             for long_label in long_labels:
-                if settings.debug:
-                    print(
-                        f"Line {file_iterator.index} ({operation}): long address label {long_label} is read here"
-                    )
+                debug.pdbg(
+                    f"Line {file_iterator.index} ({operation}): long address label {long_label} is read here"
+                )
                 if long_label not in ret_function.long_read_labels_str:
                     ret_function.long_read_labels_str.append(long_label)
             continue
 
-    if settings.debug:
-        if ret_function.empty:
-            print(f"Line {file_iterator.index}: Function {label} is empty!")
-        print(f"Line {file_iterator.index}: Function {label} ends here")
+    if ret_function.empty:
+        debug.pdbg(f"Line {file_iterator.index}: Function {label} is empty!")
+    debug.pdbg(f"Line {file_iterator.index}: Function {label} ends here")
 
     return ret_function
 
@@ -357,8 +341,7 @@ def parse_constant(file_iterator, label):
     Returns:
         Constant: The parsed Constant object.
     """
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Constant {label} starts here")
+    debug.pdbg(f"Line {file_iterator.index}: Constant {label} starts here")
 
     ret_constant = analysis.Constant(file_iterator.path, label, file_iterator.index)
     while True:
@@ -378,7 +361,6 @@ def parse_constant(file_iterator, label):
             ret_constant.end_line = file_iterator.index
             break
 
-    if settings.debug:
-        print(f"Line {file_iterator.index}: Constant {label} ends here")
+    debug.pdbg(f"Line {file_iterator.index}: Constant {label} ends here")
 
     return ret_constant

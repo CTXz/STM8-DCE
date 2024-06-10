@@ -19,6 +19,7 @@ STM8 assembly code.
 """
 
 from . import settings
+from . import debug
 
 ############################################
 # Classes
@@ -154,10 +155,9 @@ class Function:
         for global_def in globals:
             if global_def.name == self.name:
                 self.global_defs.append(global_def)
-                if settings.debug:
-                    print(
-                        f"Global in {global_def.path}:{global_def.line} matched to function {self.name} in {self.path}:{self.start_line}"
-                    )
+                debug.pdbg(
+                    f"Global in {global_def.path}:{global_def.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                )
 
     def resolve_isr(self, interrupts):
         """
@@ -169,10 +169,9 @@ class Function:
         for interrupt in interrupts:
             if interrupt.name == self.name:
                 self.isr_def = interrupt
-                if settings.debug:
-                    print(
-                        f"Interrupt {interrupt.path}:{interrupt.line} matched to function {self.name} in {self.path}:{self.start_line}"
-                    )
+                debug.pdbg(
+                    f"Interrupt {interrupt.path}:{interrupt.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                )
 
     def resolve_calls(self, functions):
         """
@@ -197,10 +196,9 @@ class Function:
                         print(f"In file {func.path}:{func.start_line}")
                     exit(1)
                 self.calls.append(funcs[0])
-                if settings.debug:
-                    print(
-                        f"Function {self.name} in {self.path}:{self.start_line} calls function {funcs[0].name} in {funcs[0].path}:{funcs[0].start_line}"
-                    )
+                debug.pdbg(
+                    f"Function {self.name} in {self.path}:{self.start_line} calls function {funcs[0].name} in {funcs[0].path}:{funcs[0].start_line}"
+                )
             else:
                 matched = False
                 for func in funcs:
@@ -211,10 +209,9 @@ class Function:
                             )
                             exit(1)
                         self.calls.append(func)
-                        if settings.debug:
-                            print(
-                                f"Function {self.name} in {self.path}:{self.start_line} calls static function {func.name} in {func.path}:{func.start_line}"
-                            )
+                        debug.pdbg(
+                            f"Function {self.name} in {self.path}:{self.start_line} calls static function {func.name} in {func.path}:{func.start_line}"
+                        )
 
     def resolve_fptrs(self, functions):
         """
@@ -227,10 +224,9 @@ class Function:
             for func in functions:
                 if func.name == long_read_label:
                     self.fptrs.append(func)
-                    if settings.debug:
-                        print(
-                            f"Function {self.name} in {self.path}:{self.start_line} assigns function pointer to {func.name} in {func.path}:{func.start_line}"
-                        )
+                    debug.pdbg(
+                        f"Function {self.name} in {self.path}:{self.start_line} assigns function pointer to {func.name} in {func.path}:{func.start_line}"
+                    )
 
     def resolve_constants(self, constants):
         """
@@ -253,18 +249,16 @@ class Function:
                         print(f"In file {const.path}:{const.start_line}")
                     exit(1)
                 self.constants.append(consts[0])
-                if settings.debug:
-                    print(
-                        f"Function {self.name} in {self.path}:{self.start_line} reads global constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
-                    )
+                debug.pdbg(
+                    f"Function {self.name} in {self.path}:{self.start_line} reads global constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
+                )
             else:
                 for const in consts:
                     if const.path == self.path:
                         self.constants.append(const)
-                        if settings.debug:
-                            print(
-                                f"Function {self.name} in {self.path}:{self.start_line} reads local constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
-                            )
+                        debug.pdbg(
+                            f"Function {self.name} in {self.path}:{self.start_line} reads local constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
+                        )
 
 
 class Constant:
@@ -316,10 +310,9 @@ class Constant:
         for global_def in globals:
             if global_def.name == self.name:
                 self.global_defs.append(global_def)
-                if settings.debug:
-                    print(
-                        f"Global in {global_def.path}:{global_def.line} matched to constant {self.name} in {self.path}:{self.start_line}"
-                    )
+                debug.pdbg(
+                    f"Global in {global_def.path}:{global_def.line} matched to constant {self.name} in {self.path}:{self.start_line}"
+                )
 
 
 ############################################
@@ -420,8 +413,7 @@ def traverse_calls(functions, top):
     Returns:
         list: List of all traversed Function objects.
     """
-    if settings.debug:
-        print(f"Traversing in {top.name} in {top.path}:{top.start_line}")
+    debug.pdbg(f"Traversing in {top.name} in {top.path}:{top.start_line}")
 
     ret = []
 
@@ -431,8 +423,7 @@ def traverse_calls(functions, top):
 
         ret += [call] + traverse_calls(functions, call)
 
-    if settings.debug:
-        print(f"Traversing out {top.name} in {top.path}:{top.start_line}")
+    debug.pdbg(f"Traversing out {top.name} in {top.path}:{top.start_line}")
 
     return ret
 

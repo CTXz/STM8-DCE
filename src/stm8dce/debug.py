@@ -17,11 +17,23 @@
 This module provides debug output functions.
 """
 
+from . import settings
+
+
+def pdbg(*args):
+    """
+    Only prints if the debug setting is enabled.
+    """
+    if settings.debug:
+        print(*args)
+
 
 def pseperator():
     """
     Prints a separator line for better debug output readability.
+    Only prints if the debug setting is enabled.
     """
-    print(
-        "========================================================================================="
-    )
+    if settings.debug:
+        print(
+            "========================================================================================="
+        )
