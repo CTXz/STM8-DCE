@@ -13,12 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Description:
-#   Debug output related functions
+"""
+This module provides debug output functions.
+"""
 
 
-# Prints a seperator line for better debug output readability
 def pseperator():
+    """
+    Prints a separator line for better debug output readability.
+    """
     print(
         "========================================================================================="
     )

@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Description:
-#   Classes and Functions to parse STM8 SDCC generated assembly files
+"""
+This module provides classes and functions to parse STM8 SDCC generated assembly files.
+"""
 
 from . import settings
 from . import debug
@@ -26,13 +27,22 @@ from . import analysis
 ############################################
 
 
-# Class to iterate over lines in a file
-# Notably it include:
-#   - A prev() function to move back one line
-#   - A path attribute to store the path of the file
-#   - An index attribute to store the current line number
 class FileIterator:
+    """
+    Class to iterate over lines in a file.
+
+    Attributes:
+        path (str): The path of the file.
+        index (int): The current line number.
+    """
+
     def __init__(self, f):
+        """
+        Initializes the FileIterator with the given file object.
+
+        Args:
+            f (file): The file object to iterate over.
+        """
         self.path = f.name
         self.iterable = f.readlines()
         self.index = 0
@@ -41,6 +51,15 @@ class FileIterator:
         return self
 
     def next(self):
+        """
+        Returns the next line in the file.
+
+        Returns:
+            str: The next line in the file.
+
+        Raises:
+            StopIteration: If the end of the file is reached.
+        """
         if self.index < len(self.iterable):
             ret = self.iterable[self.index]
             self.index += 1
@@ -49,6 +68,15 @@ class FileIterator:
             raise StopIteration
 
     def prev(self):
+        """
+        Moves back one line in the file.
+
+        Returns:
+            str: The previous line in the file.
+
+        Raises:
+            StopIteration: If the beginning of the file is reached.
+        """
         if self.index > 0:
             self.index -= 1
             return self.iterable[self.index]
@@ -61,14 +89,23 @@ class FileIterator:
 ############################################
 
 
-# Parses a file and returns a list of:
-#   - Function objects
-#   - GlobalDef objects
-#   - IntDef objects
-#   - Constant objects
-# This function opens the file and creates a FileIterator
-# The actual parsing is done by the parse() function
 def parse_file(file):
+    """
+    Parses a file and returns a list of:
+        - Function objects
+        - GlobalDef objects
+        - IntDef objects
+        - Constant objects
+
+    This function opens the file and creates a FileIterator.
+    The actual parsing is done by the parse() function.
+
+    Args:
+        file (str): The path to the file to be parsed.
+
+    Returns:
+        tuple: A tuple containing lists of global definitions, interrupt definitions, constants, and functions.
+    """
     if settings.debug:
         print()
         print("Parsing file:", file)
@@ -79,15 +116,26 @@ def parse_file(file):
         return parse(fileit)
 
 
-# Parses the file iterator and returns a list of:
-#   - Function objects
-#   - GlobalDef objects
-#   - IntDef objects
-#   - Constant objects
-# Parsing includes:
-#   - Detecting global definitions
-#   - Detecting and parsing code sections
 def parse(fileit):
+    """
+    Parses the file iterator and returns a list of:
+        - Function objects
+        - GlobalDef objects
+        - IntDef objects
+        - Constant objects
+
+    Parsing includes:
+        - Detecting global definitions
+        - Detecting interrupt definitions
+        - Detecting and parsing code sections (see parse_code_section)
+        - Detecting and parsing constant sections (see parse_const_section)
+
+    Args:
+        fileit (FileIterator): The file iterator to parse.
+
+    Returns:
+        tuple: A tuple containing lists of global definitions, interrupt definitions, constants, and functions.
+    """
     globals = []
     interrupts = []
     functions = []
@@ -130,12 +178,20 @@ def parse(fileit):
     return globals, interrupts, constants, functions
 
 
-# Parses the code section of the file
-# Returns a list of Function objects within the code section
-# Parsing includes:
-#  - Detecting and parsing functions
-#  - Detecting end of code section
 def parse_code_section(fileit):
+    """
+    Parses the code section of the file and returns a list of Function objects within the code section.
+
+    Parsing includes:
+        - Detecting and parsing functions (see parse_function)
+        - Detecting end of code section
+
+    Args:
+        fileit (FileIterator): The file iterator to parse.
+
+    Returns:
+        list: A list of Function objects.
+    """
     if settings.debug:
         print("Line {}: Code section starts here".format(fileit.index))
 
@@ -146,11 +202,13 @@ def parse_code_section(fileit):
         except StopIteration:
             break
 
+        # Check if this is the end of the code section (start of a new area)
         area = matchers.is_area(line)
         if area:
             fileit.prev()  # Set back as this line is not part of the code section
             break
 
+        # Parse function if a function label is found
         flabel = matchers.is_function_label(line)
         if flabel:
             functions += [parse_function(fileit, flabel)]
@@ -162,6 +220,19 @@ def parse_code_section(fileit):
 
 
 def parse_const_section(fileit):
+    """
+    Parses the constants section of the file and returns a list of Constant objects.
+
+    Parsing includes:
+        - Detecting constants
+        - Detecting end of constants section
+
+    Args:
+        fileit (FileIterator): The file iterator to parse.
+
+    Returns:
+        list: A list of Constant objects.
+    """
     if settings.debug:
         print("Line {}: Constants section starts here".format(fileit.index))
 
@@ -172,11 +243,13 @@ def parse_const_section(fileit):
         except StopIteration:
             break
 
+        # Check if this is the end of the constants section (start of a new area)
         area = matchers.is_area(line)
         if area:
             fileit.prev()  # Set back as this line is not part of the constants section
             break
 
+        # Parse constant if a constant label is found
         clabel = matchers.is_constant_label(line)
         if clabel:
             constants += [parse_constant(fileit, clabel)]
@@ -187,13 +260,23 @@ def parse_const_section(fileit):
     return constants
 
 
-# Parses a function and returns a Function object
-# Parsing includes:
-#  - Detecting calls made by the function
-#  - Detecting if the function is empty
-#  - Detecting if the function is an IRQ handler
-#  - Detecting the end of the function
 def parse_function(fileit, label):
+    """
+    Parses a function and returns a Function object.
+
+    Parsing includes:
+        - Detecting if the function is empty
+        - Detecting calls made by the function
+        - Detecting if the function is an IRQ handler
+        - Detecting the end of the function
+
+    Args:
+        fileit (FileIterator): The file iterator to parse.
+        label (str): The label of the function.
+
+    Returns:
+        Function: The parsed Function object.
+    """
     if settings.debug:
         print("Line {}: Function {} starts here".format(fileit.index, label))
 
@@ -244,7 +327,6 @@ def parse_function(fileit, label):
         match = matchers.is_long_label_read(line)
         if match:
             op, lbls = match
-
             for l in lbls:
                 if settings.debug:
                     print(
@@ -252,10 +334,8 @@ def parse_function(fileit, label):
                             fileit.index, op, l
                         )
                     )
-
                 if l not in ret.long_read_labels_str:
                     ret.long_read_labels_str.append(l)
-
             continue
 
     if settings.debug:
@@ -267,6 +347,16 @@ def parse_function(fileit, label):
 
 
 def parse_constant(fileit, label):
+    """
+    Parses a constant and returns a Constant object.
+
+    Args:
+        fileit (FileIterator): The file iterator to parse.
+        label (str): The label of the constant.
+
+    Returns:
+        Constant: The parsed Constant object.
+    """
     if settings.debug:
         print("Line {}: Constant {} starts here".format(fileit.index, label))
 

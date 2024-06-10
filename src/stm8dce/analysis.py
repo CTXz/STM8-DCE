@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Description:
-#   Classes and functions helpful for analyzing SDCC generated
-#   STM8 assembly code
+"""
+This module provides classes and functions helpful for analyzing SDCC generated
+STM8 assembly code.
+"""
 
 from . import settings
 
@@ -24,12 +25,16 @@ from . import settings
 ############################################
 
 
-# Class to store global definitions
-# Includes:
-#  - Path of the file the global is defined in
-#  - Name of the global
-#  - Line number of the global definition
 class GlobalDef:
+    """
+    Class to store global definitions.
+
+    Attributes:
+        path (str): Path of the file the global is defined in.
+        name (str): Name of the global.
+        line (int): Line number of the global definition.
+    """
+
     def __init__(self, path, name, line):
         self.path = path
         self.name = name
@@ -42,14 +47,23 @@ class GlobalDef:
         return self.name
 
     def print(self):
+        """Prints the details of the global definition."""
         print("Global:", self.name)
         print("File:", self.path)
         print("Line:", self.line)
 
 
-# Class to store interrupt definitions
-# Equivalent to GlobalDef, but prints differently
 class IntDef:
+    """
+    Class to store interrupt definitions.
+    Equivalent to GlobalDef, but prints differently.
+
+    Attributes:
+        path (str): Path of the file the interrupt is defined in.
+        name (str): Name of the interrupt.
+        line (int): Line number of the interrupt definition.
+    """
+
     def __init__(self, path, name, line):
         self.path = path
         self.name = name
@@ -62,32 +76,46 @@ class IntDef:
         return self.name
 
     def print(self):
+        """Prints the details of the interrupt definition."""
         print("Interrupt:", self.name)
         print("File:", self.path)
         print("Line:", self.line)
 
 
-# Class to store function definitions
-# Includes:
-#  - Path of the file the function is defined in
-#  - Name of the function
-#  - List of calls made by the function
-#  - List of function pointers loaded by the function
-#  - Start line of the function
-#  - End line of the function
-#  - Global definition/label assinged to the function
-#  - If the function is an IRQ handler
-#  - If the function is empty
 class Function:
+    """
+    Class to store function definitions.
+
+    Input Attributes:
+        path (str): Path of the file the function is defined in.
+        name (str): Name of the function.
+        start_line (int): Start line of the function.
+        end_line (int): End line of the function.
+        calls_str (list): List of calls made by the function.
+        long_read_labels_str (list): List of long read labels.
+
+    Generated Attributes:
+        calls (list): List of resolved functions called by the function (See resolve_calls).
+        constants (list): List of resolved constants read by the function (See resolve_constants).
+        global_defs (list): List of resolved global definitions used by the function (See resolve_globals).
+        fptrs (list): List of resolved function pointers assigned by the function (See resolve_fptrs).
+        isr_def (IntDef): Resolved interrupt definition associated with the function (See resolve_isr).
+        empty (bool): Indicates if the function is empty.
+
+    The intended use of this class is to first parse the input attributes and then call the resolve_* functions
+    to resolve the generated attributes.
+    """
+
     def __init__(self, path, name, start_line):
         self.path = path
         self.name = name
-        self.calls_str = []
-        self.calls = []
-        self.long_read_labels_str = []
-        self.constants = []
         self.start_line = start_line
         self.end_line = None
+        self.calls_str = []
+        self.long_read_labels_str = []
+
+        self.calls = []
+        self.constants = []
         self.global_defs = []
         self.fptrs = []
         self.isr_def = None
@@ -100,31 +128,38 @@ class Function:
         return self.name
 
     def print(self):
+        """Prints the details of the function."""
         print("Function:", self.name)
         print("File:", self.path)
         print("Calls:", self.calls_str)
         print("Start line:", self.start_line)
         print("End line:", self.end_line)
-        print("IRQ Handler:", self.isr)
+        print("IRQ Handler:", self.isr_def)
 
     def resolve_globals(self, globals):
-        # Get all matching global definitions
+        """
+        Resolves global definitions for the function.
+
+        Args:
+            globals (list): List of all GlobalDef objects.
+        """
         for g in globals:
             if g.name == self.name:
                 self.global_defs.append(g)
                 if settings.debug:
                     print(
                         "Global in {}:{} matched to function {} in {}:{}".format(
-                            g.path,
-                            g.line,
-                            self.name,
-                            self.path,
-                            self.start_line,
+                            g.path, g.line, self.name, self.path, self.start_line
                         )
                     )
 
     def resolve_isr(self, interrupts):
-        # Get all matching interrupt definitions
+        """
+        Resolves interrupt definitions for the function.
+
+        Args:
+            interrupts (list): List of all IntDef objects.
+        """
         for i in interrupts:
             if i.name == self.name:
                 self.isr_def = i
@@ -135,20 +170,20 @@ class Function:
                         )
                     )
 
-    # Precondition: Globals of all functions have been resolved first
     def resolve_calls(self, functions):
-        # Get all matching functions called by this function
+        """
+        Resolves function calls for the function.
+
+        Precondition: Globals of all functions have been resolved first.
+
+        Args:
+            functions (list): List of all Function objects.
+        """
         for c in self.calls_str:
             funcs = functions_by_name(functions, c)
 
-            # Check if either is defined globally/not-static
-            glob = False
-            for f in funcs:
-                if f.global_defs:
-                    glob = True
-                    break
+            glob = any(f.global_defs for f in funcs)
 
-            # If function is defined globally, there can only be one instance!
             if glob:
                 if len(funcs) > 1:
                     print("Error: Conflicting definitions for non-static function:", c)
@@ -167,8 +202,6 @@ class Function:
                             funcs[0].start_line,
                         )
                     )
-            # Alternatively, there may be multiple static definitions
-            # if so, choose the function within the same file
             else:
                 matched = False
                 for f in funcs:
@@ -180,9 +213,7 @@ class Function:
                                 )
                             )
                             exit(1)
-
                         self.calls.append(f)
-
                         if settings.debug:
                             print(
                                 "Function {} in {}:{} calls static function {} in {}:{}".format(
@@ -196,6 +227,12 @@ class Function:
                             )
 
     def resolve_fptrs(self, functions):
+        """
+        Resolves function pointers assigned by the function.
+
+        Args:
+            functions (list): List of all Function objects.
+        """
         for l in self.long_read_labels_str:
             for f in functions:
                 if f.name == l:
@@ -213,14 +250,16 @@ class Function:
                         )
 
     def resolve_constants(self, constants):
+        """
+        Resolves constants for the function.
+
+        Args:
+            constants (list): List of all Constant objects.
+        """
         for c in self.long_read_labels_str:
             consts = constants_by_name(constants, c)
 
-            glob = False
-            for c in consts:
-                if c.global_defs:
-                    glob = True
-                    break
+            glob = any(c.global_defs for c in consts)
 
             if glob:
                 if len(consts) > 1:
@@ -257,8 +296,22 @@ class Function:
                             )
 
 
-# Class to store constant definitions
 class Constant:
+    """
+    Class to store constant definitions.
+
+    Input Attributes:
+        path (str): Path of the file the constant is defined in.
+        name (str): Name of the constant.
+        start_line (int): Start line of the constant.
+        end_line (int): End line of the constant.
+
+    Generated Attributes:
+        global_defs (list): List of resolved global definitions associated with the constant (See resolve_globals).
+
+    The intended use of this class is to first parse the input attributes and then call the resolve_* functions
+    """
+
     def __init__(self, path, name, start_line):
         self.path = path
         self.name = name
@@ -273,24 +326,26 @@ class Constant:
         return self.name
 
     def print(self):
+        """Prints the details of the constant."""
         print("Constant:", self.name)
         print("File:", self.path)
         print("Start line:", self.start_line)
         print("End line:", self.end_line)
 
     def resolve_globals(self, globals):
-        # Get all matching global definitions
+        """
+        Resolves global definitions for the constant.
+
+        Args:
+            globals (list): List of all GlobalDef objects.
+        """
         for g in globals:
             if g.name == self.name:
                 self.global_defs.append(g)
                 if settings.debug:
                     print(
                         "Global in {}:{} matched to constant {} in {}:{}".format(
-                            g.path,
-                            g.line,
-                            self.name,
-                            self.path,
-                            self.start_line,
+                            g.path, g.line, self.name, self.path, self.start_line
                         )
                     )
 
@@ -300,19 +355,35 @@ class Constant:
 ############################################
 
 
-# Returns the a list of function objects matching
-# by name from a list of functions
 def functions_by_name(functions, name):
-    ret = []
-    for f in functions:
-        if f.name == name:
-            ret.append(f)
-    return ret
+    """
+    Returns a list of function objects matching by name from a list of function objects.
+
+    Args:
+        functions (list): List of Function objects.
+        name (str): Name of the function to match.
+
+    Returns:
+        list: List of matching Function objects.
+    """
+    return [f for f in functions if f.name == name]
 
 
-# Returns the a function object matching
-# by filename and name from a list of functions
 def function_by_filename_name(functions, filename, name):
+    """
+    Returns a list of function objects matching by filename and name from a list of functions.
+
+    Args:
+        functions (list): List of Function objects.
+        filename (str): Filename to match.
+        name (str): Name of the function to match.
+
+    Returns:
+        Function: Matching Function object.
+
+    Raises:
+        SystemExit: If multiple definitions for the function are found.
+    """
     ret = None
     for f in functions:
         f_filename = f.path.split("/")[-1]
@@ -325,19 +396,35 @@ def function_by_filename_name(functions, filename, name):
     return ret
 
 
-# Returns the a list of constant objects matching
-# by name from a list of constants
 def constants_by_name(constants, name):
-    ret = []
-    for c in constants:
-        if c.name == name:
-            ret.append(c)
-    return ret
+    """
+    Returns a list of constant objects matching by name from a list of constants.
+
+    Args:
+        constants (list): List of Constant objects.
+        name (str): Name of the constant to match.
+
+    Returns:
+        list: List of matching Constant objects.
+    """
+    return [c for c in constants if c.name == name]
 
 
-# Returns the a list of constant objects matching
-# by filename and name from a list of constants
 def constant_by_filename_name(constants, filename, name):
+    """
+    Returns a constant object matching by filename and name from a list of constants.
+
+    Args:
+        constants (list): List of Constant objects.
+        filename (str): Filename to match.
+        name (str): Name of the constant to match.
+
+    Returns:
+        Constant: Matching Constant object.
+
+    Raises:
+        SystemExit: If multiple definitions for the constant are found.
+    """
     ret = None
     for c in constants:
         c_filename = c.path.split("/")[-1]
@@ -350,16 +437,23 @@ def constant_by_filename_name(constants, filename, name):
     return ret
 
 
-# Traverse all calls made by a function and return a list of
-# all functions
 def traverse_calls(functions, top):
+    """
+    Traverse all calls made by a function and return a list of all traversed functions.
+
+    Args:
+        functions (list): List of Function objects.
+        top (Function): The top function to start traversal from.
+
+    Returns:
+        list: List of all traversed Function objects.
+    """
     if settings.debug:
         print("Traversing in {} in {}:{}".format(top.name, top.path, top.start_line))
 
     ret = []
 
     for call in top.calls:
-        # Prevent infinite recursion
         if call == top:
             continue
 
@@ -371,10 +465,14 @@ def traverse_calls(functions, top):
     return ret
 
 
-# Returns a list of all interrupt handlers in the list of functions
 def interrupt_handlers(functions):
-    ret = []
-    for f in functions:
-        if f.isr_def:
-            ret.append(f)
-    return ret
+    """
+    Returns a list of all interrupt handlers in the list of functions.
+
+    Args:
+        functions (list): List of Function objects.
+
+    Returns:
+        list: List of interrupt handler Function objects.
+    """
+    return [f for f in functions if f.isr_def]

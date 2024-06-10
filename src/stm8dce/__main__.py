@@ -20,14 +20,16 @@
 #          https://github.com/XaviDCR92/sdccrm
 #
 
+"""
+SDCC STM8 Dead Code Elimination Tool
+"""
+
 import os
 import argparse
 import shutil
-from enum import Enum
 
 from . import parsers
 from . import debug
-from . import matchers
 from . import analysis
 from . import settings
 from .__init__ import __version__
@@ -47,15 +49,19 @@ SDCC_REQ = [
 ############################################
 
 
-# Evaluate a function label for exclusion
-# User can either specify function label
-# as is (ex. _hello), or with its filename
-# (ex. file.asm:_hello) to allow exclusion
-# for cases where multiple functions have
-# the same name
-# Returns a tuple of filename and name
-# if filename is not specified, filename is None
 def eval_flabel(flabel):
+    """
+    Evaluates a function label for exclusion.
+
+    Users can specify a function label either as is (e.g., _hello) or with its filename (e.g., file.asm:_hello)
+    to allow exclusion for cases where multiple functions have the same name.
+
+    Args:
+        flabel (str): The function label to evaluate.
+
+    Returns:
+        tuple: A tuple of filename and name. If the filename is not specified, filename is None.
+    """
     if ":" in flabel:
         filename, name = flabel.split(":")
         return filename, name
@@ -68,6 +74,10 @@ def eval_flabel(flabel):
 
 
 def main():
+    """
+    The main function of the STM8DCE tool.
+    Parses command-line arguments, processes the specified assembly files, and performs dead code elimination.
+    """
     # ==========================================
     # Arg Parsing
     # ==========================================
@@ -83,7 +93,6 @@ def main():
     parser.add_argument(
         "-xf", "--exclude-function", help="Exclude functions", type=str, nargs="+"
     )
-    parser.add_argument
     parser.add_argument(
         "-xc",
         "--exclude-constant",
@@ -276,7 +285,7 @@ def main():
                     debug.pseperator()
                 keepf += [f] + analysis.traverse_calls(functions, f)
 
-    # Do not exclude functions that may be required by SDCC
+    # Keep functions that may be required by SDCC
     for name in SDCC_REQ:
         f = analysis.functions_by_name(functions, name)
 
@@ -434,7 +443,7 @@ def main():
         with open(file, "w") as f:
             f.writelines(lines)
 
-    # Remove any remaing global definitions
+    # Remove any remaining global definitions
     # assigned to removed functions
     # This catches any global labels that import unused
     # functions from other files

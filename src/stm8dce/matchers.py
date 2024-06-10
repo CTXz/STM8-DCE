@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Description:
-#   Functions to pattern match STM8 SDCC generated assembly code
+"""
+This module provides functions to pattern match STM8 SDCC generated assembly code
+"""
 
 from itertools import takewhile
 
@@ -79,29 +80,34 @@ LONG_READ_INSTRUCTIONS = [
 ############################################
 
 
-# Removes comments from a line
-# This is used to prevent comments from
-# polluting the pattern matching
-# Criteria for a comment:
-#   - Starts at ';'
 def remove_comments(line):
+    """
+    Removes comments from a line to prevent them from affecting pattern matching.
+
+    Criteria for a comment:
+        - Starts at ';'
+
+    Args:
+        line (str): The line from which comments need to be removed.
+
+    Returns:
+        str: The line without comments.
+    """
     return line.split(";")[0].strip()
 
 
-# Returns if the line is a comment
-# Criteria for a comment:
-#   - Start with ';'
-def is_comment(line):
-    return line.strip().startswith(";")
-
-
-# Returns if the instruction argument is a register
-def is_register(arg):
-    return arg.lower() in REGISTER_ARGS
-
-
-# Splits an instruction into its components ([mnem, arg1, arg2, ...])
 def split_instruction(line):
+    """
+    Splits an instruction into its components ([mnem, arg1, arg2, ...]).
+    This function handles the parsing of instructions into mnemonic and arguments,
+    taking care of special cases like parentheses.
+
+    Args:
+        line (str): The line containing the instruction.
+
+    Returns:
+        list: A list of instruction components.
+    """
     sline = remove_comments(line)
 
     if not sline:
@@ -118,8 +124,8 @@ def split_instruction(line):
 
     i = 0
     while i < len(allargs):
+        # Do not split on commas inside parentheses!
         if allargs[i] == "(":
-            # Skip until we find the closing parantheses
             while allargs[i] != ")":
                 i += 1
             continue
@@ -138,13 +144,51 @@ def split_instruction(line):
 ############################################
 
 
-# Returns if the line is a function label
-# Precondition: line is in code section
-# Critera for a function label:
-#   - Is not a comment
-#   - Ends with ':'
-#   - Second last character is not a '$' (nnnnn$ are local labels)
+def is_comment(line):
+    """
+    Determines if the line is a comment.
+
+    Criteria for a comment:
+        - Starts with ';'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        bool: True if the line is a comment, False otherwise.
+    """
+    return line.strip().startswith(";")
+
+
+def is_register(arg):
+    """
+    Checks if the instruction argument is a register.
+
+    Args:
+        arg (str): The argument to check.
+
+    Returns:
+        bool: True if the argument is a register, False otherwise.
+    """
+    return arg.lower() in REGISTER_ARGS
+
+
 def is_function_label(line):
+    """
+    Checks if the line is a function label.
+    Precondition: line is in the code section.
+
+    Criteria for a function label:
+        - Is not a comment
+        - Ends with ':'
+        - Second last character is not a '$' (nnnnn$: are local labels)
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The function label if it is a function label, None otherwise.
+    """
     sline = remove_comments(line)
 
     if sline.endswith(":") and sline[-2] != "$":
@@ -153,25 +197,42 @@ def is_function_label(line):
     return None
 
 
-# Returns if the line is a constant label
-# Precondition: line is in constants section
-# Critera for a constant label:
-#   - Same as function label
 def is_constant_label(line):
+    """
+    Checks if the line is a constant label.
+    Precondition: line is in the constants section.
+
+    Criteria for a constant label:
+        - Same as function label
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The constant label if it is a constant label, None otherwise.
+    """
     return is_function_label(line)
 
 
-# Preconditions: line is after a function label
-# Returns the call target if the line is a call
-# instruction, None otherwise
-# Critera for a call:
-#   - Starts with 'call'
-# or
-#   - Starts with 'jp'
-#   - Followed by a label which:
-#       - Starts with _ or a letter
-#       - Only contains letters, numbers, and '_'
 def is_call(line):
+    """
+    Returns the call target if the line is a call instruction, None otherwise.
+    Precondition: line is after a function label.
+
+    Criteria for a call:
+        - Starts with 'call'
+        or
+        - Starts with 'jp'
+        - Followed by a label which:
+            - Starts with _ or a letter
+            - Only contains letters, numbers, and '_'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The call target if it is a call instruction, None otherwise.
+    """
     sline = remove_comments(line.strip())
 
     if sline.startswith("call"):
@@ -187,69 +248,114 @@ def is_call(line):
     return None
 
 
-# Preconditions: line is after a function label
-# Returns if the line marks a interrupt return
-# Critera for a interrupt return:
-#   - Is 'iret'
 def is_iret(line):
+    """
+    Determines if the line marks an interrupt return.
+    Precondition: line is after a function label.
+
+    Criteria for an interrupt return:
+        - Is 'iret'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        bool: True if the line marks an interrupt return, False otherwise.
+    """
     sline = remove_comments(line.strip())
     if sline == "iret":
         return True
     return False
 
 
-# Returns if the line is an area directive
-# and which area it is
-# Criteria for an area directive:
-#   - Start with '.area'
 def is_area(line):
+    """
+    Determines if the line is an area directive and which area it is.
+
+    Criteria for an area directive:
+        - Starts with '.area'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The area name if it is an area directive, None otherwise.
+    """
     sline = remove_comments(line.strip())
     if sline.startswith(".area"):
         return sline.split(".area")[1].strip()
     return None
 
 
-# Returns if the line is a global definition
-# and the name of the global if it is one
-# Critera for a global definition:
-#   - Start with '.globl'
 def is_global_defs(line):
+    """
+    Determines if the line is a global definition and the name of the global if it is one.
+
+    Criteria for a global definition:
+        - Starts with '.globl'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The global name if it is a global definition, None otherwise.
+    """
     sline = remove_comments(line.strip())
     if sline.startswith(".globl"):
         return sline.split(".globl")[1].strip()
     return None
 
 
-# Returns if the line is an interrupt definition
-# and the name of the interrupt if it is one
-# Critera for an interrupt definition:
-#   - Start with 'int'
 def is_int_def(line):
+    """
+    Determines if the line is an interrupt definition and the name of the interrupt if it is one.
+
+    Criteria for an interrupt definition:
+        - Starts with 'int'
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        str: The interrupt name if it is an interrupt definition, None otherwise.
+    """
     sline = remove_comments(line.strip())
     if sline.startswith("int"):
         return sline.split("int")[1].strip()
     return None
 
 
-# Returns if a long addressing capable instruction reads from a label
-# This is useful to detect if a constant is used
-# If it does, it returns a touple with the instruction mnemonic and the label
-# Criteria for a long label read:
-#   - Starts with an entry in LONG_READ_INSTRUCTIONS
-#   - If the instruction has a single argument:
-#       - The argument must contain a label
-#   - If the instruction has a two comma separated arguments:
-#       - The src argument (right side of the comma) must contain a label
-#   - If the instruction has three comma separated arguments (btjt, btjf):
-#       - Either argument must contain a label
-# A label is defined as:
-#   - Is preceded only by non-alphanumeric characters (else hex numbers would be detected)
-#   - Starts with a letter or '_'
-#   - Only contains letters, numbers, and '_'
-#   - Is not a register
-# Note that this pattern match does not care how the label is referenced (immidiate vs indirect)
-# This means, both 'ldw x, #(_label+0)' and 'ldw x, _label+0' will match
 def is_long_label_read(line):
+    """
+    Determines if a long addressing capable instruction reads from a label.
+    If it does, it returns a tuple with the instruction mnemonic and the label.
+
+    Criteria for a long label read:
+        - Starts with an entry in LONG_READ_INSTRUCTIONS
+        - If the instruction has a single argument:
+            - The argument must contain a label
+        - If the instruction has two comma separated arguments:
+            - The src argument (right side of the comma) must contain a label
+        - If the instruction has three comma separated arguments (btjt, btjf):
+            - Either argument must contain a label
+
+    A label is defined as:
+        - Is preceded only by non-alphanumeric characters (else hex numbers would be detected)
+        - Starts with a letter or '_'
+        - Only contains letters, numbers, and '_'
+        - Is not a register
+
+    Note that this pattern match does not care how the label is referenced (immediate vs indirect).
+    This means, both 'ldw x, #(_label+0)' and 'ldw x, _label+0' will match.
+
+    Args:
+        line (str): The line to check.
+
+    Returns:
+        tuple: A tuple containing the mnemonic and the label(s) (mnem, [label1, label2, ...])
+        if it reads from one or more labels, None otherwise.
+    """
+
     def is_valid_label_start(char, prev_char):
         return (char.isalpha() or char == "_") and (
             prev_char is None or not prev_char.isalnum()
