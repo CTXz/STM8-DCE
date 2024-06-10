@@ -151,12 +151,12 @@ class Function:
         Args:
             globals (list): List of all GlobalDef objects.
         """
-        for g in globals:
-            if g.name == self.name:
-                self.global_defs.append(g)
+        for global_def in globals:
+            if global_def.name == self.name:
+                self.global_defs.append(global_def)
                 if settings.debug:
                     print(
-                        f"Global in {g.path}:{g.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                        f"Global in {global_def.path}:{global_def.line} matched to function {self.name} in {self.path}:{self.start_line}"
                     )
 
     def resolve_isr(self, interrupts):
@@ -166,12 +166,12 @@ class Function:
         Args:
             interrupts (list): List of all IntDef objects.
         """
-        for i in interrupts:
-            if i.name == self.name:
-                self.isr_def = i
+        for interrupt in interrupts:
+            if interrupt.name == self.name:
+                self.isr_def = interrupt
                 if settings.debug:
                     print(
-                        f"Interrupt {i.path}:{i.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                        f"Interrupt {interrupt.path}:{interrupt.line} matched to function {self.name} in {self.path}:{self.start_line}"
                     )
 
     def resolve_calls(self, functions):
@@ -183,18 +183,18 @@ class Function:
         Args:
             functions (list): List of all Function objects.
         """
-        for c in self.calls_str:
-            funcs = functions_by_name(functions, c)
+        for call_str in self.calls_str:
+            funcs = functions_by_name(functions, call_str)
 
             glob = any(f.global_defs for f in funcs)
 
             if glob:
                 if len(funcs) > 1:
                     print(
-                        f"Error: Conflicting definitions for non-static function: {c}"
+                        f"Error: Conflicting definitions for non-static function: {call_str}"
                     )
-                    for f in funcs:
-                        print(f"In file {f.path}:{f.start_line}")
+                    for func in funcs:
+                        print(f"In file {func.path}:{func.start_line}")
                     exit(1)
                 self.calls.append(funcs[0])
                 if settings.debug:
@@ -203,17 +203,17 @@ class Function:
                     )
             else:
                 matched = False
-                for f in funcs:
-                    if f.path == self.path:
+                for func in funcs:
+                    if func.path == self.path:
                         if matched:
                             print(
-                                f"Error: Multiple static definitions for function {f} in {f.path}"
+                                f"Error: Multiple static definitions for function {func} in {func.path}"
                             )
                             exit(1)
-                        self.calls.append(f)
+                        self.calls.append(func)
                         if settings.debug:
                             print(
-                                f"Function {self.name} in {self.path}:{self.start_line} calls static function {f.name} in {f.path}:{f.start_line}"
+                                f"Function {self.name} in {self.path}:{self.start_line} calls static function {func.name} in {func.path}:{func.start_line}"
                             )
 
     def resolve_fptrs(self, functions):
@@ -223,13 +223,13 @@ class Function:
         Args:
             functions (list): List of all Function objects.
         """
-        for l in self.long_read_labels_str:
-            for f in functions:
-                if f.name == l:
-                    self.fptrs.append(f)
+        for long_read_label in self.long_read_labels_str:
+            for func in functions:
+                if func.name == long_read_label:
+                    self.fptrs.append(func)
                     if settings.debug:
                         print(
-                            f"Function {self.name} in {self.path}:{self.start_line} assigns function pointer to {f.name} in {f.path}:{f.start_line}"
+                            f"Function {self.name} in {self.path}:{self.start_line} assigns function pointer to {func.name} in {func.path}:{func.start_line}"
                         )
 
     def resolve_constants(self, constants):
@@ -239,29 +239,31 @@ class Function:
         Args:
             constants (list): List of all Constant objects.
         """
-        for c in self.long_read_labels_str:
-            consts = constants_by_name(constants, c)
+        for long_read_label in self.long_read_labels_str:
+            consts = constants_by_name(constants, long_read_label)
 
-            glob = any(c.global_defs for c in consts)
+            glob = any(const.global_defs for const in consts)
 
             if glob:
                 if len(consts) > 1:
-                    print(f"Error: Conflicting definitions for global constant: {c}")
-                    for c in consts:
-                        print(f"In file {c.path}:{c.start_line}")
+                    print(
+                        f"Error: Conflicting definitions for global constant: {long_read_label}"
+                    )
+                    for const in consts:
+                        print(f"In file {const.path}:{const.start_line}")
                     exit(1)
                 self.constants.append(consts[0])
                 if settings.debug:
                     print(
-                        f"Function {self.name} in {self.path}:{self.start_line} reads global constant {c} in {consts[0].path}:{consts[0].start_line}"
+                        f"Function {self.name} in {self.path}:{self.start_line} reads global constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
                     )
             else:
-                for c in consts:
-                    if c.path == self.path:
-                        self.constants.append(c)
+                for const in consts:
+                    if const.path == self.path:
+                        self.constants.append(const)
                         if settings.debug:
                             print(
-                                f"Function {self.name} in {self.path}:{self.start_line} reads local constant {c} in {consts[0].path}:{consts[0].start_line}"
+                                f"Function {self.name} in {self.path}:{self.start_line} reads local constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
                             )
 
 
@@ -311,12 +313,12 @@ class Constant:
         Args:
             globals (list): List of all GlobalDef objects.
         """
-        for g in globals:
-            if g.name == self.name:
-                self.global_defs.append(g)
+        for global_def in globals:
+            if global_def.name == self.name:
+                self.global_defs.append(global_def)
                 if settings.debug:
                     print(
-                        f"Global in {g.path}:{g.line} matched to constant {self.name} in {self.path}:{self.start_line}"
+                        f"Global in {global_def.path}:{global_def.line} matched to constant {self.name} in {self.path}:{self.start_line}"
                     )
 
 
@@ -336,7 +338,7 @@ def functions_by_name(functions, name):
     Returns:
         list: List of matching Function objects.
     """
-    return [f for f in functions if f.name == name]
+    return [function for function in functions if function.name == name]
 
 
 def function_by_filename_name(functions, filename, name):
@@ -355,14 +357,14 @@ def function_by_filename_name(functions, filename, name):
         SystemExit: If multiple definitions for the function are found.
     """
     ret = None
-    for f in functions:
-        f_filename = f.path.split("/")[-1]
-        if f_filename == filename and f.name == name:
+    for function in functions:
+        f_filename = function.path.split("/")[-1]
+        if f_filename == filename and function.name == name:
             if ret:
                 print(f"Error: Multiple definitions for function: {name}")
-                print(f"In file {f.path}:{f.start_line}")
+                print(f"In file {function.path}:{function.start_line}")
                 exit(1)
-            ret = f
+            ret = function
     return ret
 
 
@@ -377,7 +379,7 @@ def constants_by_name(constants, name):
     Returns:
         list: List of matching Constant objects.
     """
-    return [c for c in constants if c.name == name]
+    return [constant for constant in constants if constant.name == name]
 
 
 def constant_by_filename_name(constants, filename, name):
@@ -396,14 +398,14 @@ def constant_by_filename_name(constants, filename, name):
         SystemExit: If multiple definitions for the constant are found.
     """
     ret = None
-    for c in constants:
-        c_filename = c.path.split("/")[-1]
-        if c_filename == filename and c.name == name:
+    for constant in constants:
+        c_filename = constant.path.split("/")[-1]
+        if c_filename == filename and constant.name == name:
             if ret:
                 print(f"Error: Multiple definitions for constant: {name}")
-                print(f"In file {c.path}:{c.start_line}")
+                print(f"In file {constant.path}:{constant.start_line}")
                 exit(1)
-            ret = c
+            ret = constant
     return ret
 
 
@@ -445,4 +447,4 @@ def interrupt_handlers(functions):
     Returns:
         list: List of interrupt handler Function objects.
     """
-    return [f for f in functions if f.isr_def]
+    return [function for function in functions if function.isr_def]

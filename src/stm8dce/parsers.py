@@ -36,15 +36,15 @@ class FileIterator:
         index (int): The current line number.
     """
 
-    def __init__(self, f):
+    def __init__(self, file_obj):
         """
         Initializes the FileIterator with the given file object.
 
         Args:
-            f (file): The file object to iterate over.
+            file_obj (file): The file object to iterate over.
         """
-        self.path = f.name
-        self.iterable = f.readlines()
+        self.path = file_obj.name
+        self.iterable = file_obj.readlines()
         self.index = 0
 
     def __iter__(self):
@@ -61,9 +61,9 @@ class FileIterator:
             StopIteration: If the end of the file is reached.
         """
         if self.index < len(self.iterable):
-            ret = self.iterable[self.index]
+            ret_line = self.iterable[self.index]
             self.index += 1
-            return ret
+            return ret_line
         else:
             raise StopIteration
 
@@ -89,7 +89,7 @@ class FileIterator:
 ############################################
 
 
-def parse_file(file):
+def parse_file(file_path):
     """
     Parses a file and returns a list of:
         - Function objects
@@ -101,22 +101,22 @@ def parse_file(file):
     The actual parsing is done by the parse() function.
 
     Args:
-        file (str): The path to the file to be parsed.
+        file_path (str): The path to the file to be parsed.
 
     Returns:
         tuple: A tuple containing lists of global definitions, interrupt definitions, constants, and functions.
     """
     if settings.debug:
         print()
-        print(f"Parsing file: {file}")
+        print(f"Parsing file: {file_path}")
         debug.pseperator()
 
-    with open(file, "r") as f:
-        fileit = FileIterator(f)
-        return parse(fileit)
+    with open(file_path, "r") as file_obj:
+        file_iterator = FileIterator(file_obj)
+        return parse(file_iterator)
 
 
-def parse(fileit):
+def parse(file_iterator):
     """
     Parses the file iterator and returns a list of:
         - Function objects
@@ -131,54 +131,58 @@ def parse(fileit):
         - Detecting and parsing constant sections (see parse_const_section)
 
     Args:
-        fileit (FileIterator): The file iterator to parse.
+        file_iterator (FileIterator): The file iterator to parse.
 
     Returns:
         tuple: A tuple containing lists of global definitions, interrupt definitions, constants, and functions.
     """
-    globals = []
-    interrupts = []
-    functions = []
-    constants = []
+    globals_list = []
+    interrupts_list = []
+    functions_list = []
+    constants_list = []
     while True:
         try:
-            line = fileit.next()
+            current_line = file_iterator.next()
         except StopIteration:
             break
 
         # Global definitions
-        global_defs = matchers.is_global_defs(line)
+        global_defs = matchers.is_global_defs(current_line)
         if global_defs:
-            globals.append(analysis.GlobalDef(fileit.path, global_defs, fileit.index))
+            globals_list.append(
+                analysis.GlobalDef(file_iterator.path, global_defs, file_iterator.index)
+            )
 
             if settings.debug:
-                print(f"Line {fileit.index}: Global definition {global_defs}")
+                print(f"Line {file_iterator.index}: Global definition {global_defs}")
 
             continue
 
         # Interrupt definitions
-        int_def = matchers.is_int_def(line)
+        int_def = matchers.is_int_def(current_line)
         if int_def:
-            interrupts.append(analysis.IntDef(fileit.path, int_def, fileit.index))
+            interrupts_list.append(
+                analysis.IntDef(file_iterator.path, int_def, file_iterator.index)
+            )
 
             if settings.debug:
-                print(f"Line {fileit.index}: Interrupt definition {int_def}")
+                print(f"Line {file_iterator.index}: Interrupt definition {int_def}")
 
             continue
 
         # Code section
-        area = matchers.is_area(line)
+        area = matchers.is_area(current_line)
         if area == "CODE":
-            functions += parse_code_section(fileit)
+            functions_list += parse_code_section(file_iterator)
 
         # Constants section
         if area == "CONST":
-            constants += parse_const_section(fileit)
+            constants_list += parse_const_section(file_iterator)
 
-    return globals, interrupts, constants, functions
+    return globals_list, interrupts_list, constants_list, functions_list
 
 
-def parse_code_section(fileit):
+def parse_code_section(file_iterator):
     """
     Parses the code section of the file and returns a list of Function objects within the code section.
 
@@ -187,39 +191,39 @@ def parse_code_section(fileit):
         - Detecting end of code section
 
     Args:
-        fileit (FileIterator): The file iterator to parse.
+        file_iterator (FileIterator): The file iterator to parse.
 
     Returns:
         list: A list of Function objects.
     """
     if settings.debug:
-        print(f"Line {fileit.index}: Code section starts here")
+        print(f"Line {file_iterator.index}: Code section starts here")
 
-    functions = []
+    functions_list = []
     while True:
         try:
-            line = fileit.next()
+            current_line = file_iterator.next()
         except StopIteration:
             break
 
         # Check if this is the end of the code section (start of a new area)
-        area = matchers.is_area(line)
+        area = matchers.is_area(current_line)
         if area:
-            fileit.prev()  # Set back as this line is not part of the code section
+            file_iterator.prev()  # Set back as this line is not part of the code section
             break
 
         # Parse function if a function label is found
-        flabel = matchers.is_function_label(line)
-        if flabel:
-            functions += [parse_function(fileit, flabel)]
+        function_label = matchers.is_function_label(current_line)
+        if function_label:
+            functions_list += [parse_function(file_iterator, function_label)]
 
     if settings.debug:
-        print(f"Line {fileit.index}: Code section ends here")
+        print(f"Line {file_iterator.index}: Code section ends here")
 
-    return functions
+    return functions_list
 
 
-def parse_const_section(fileit):
+def parse_const_section(file_iterator):
     """
     Parses the constants section of the file and returns a list of Constant objects.
 
@@ -228,39 +232,39 @@ def parse_const_section(fileit):
         - Detecting end of constants section
 
     Args:
-        fileit (FileIterator): The file iterator to parse.
+        file_iterator (FileIterator): The file iterator to parse.
 
     Returns:
         list: A list of Constant objects.
     """
     if settings.debug:
-        print(f"Line {fileit.index}: Constants section starts here")
+        print(f"Line {file_iterator.index}: Constants section starts here")
 
-    constants = []
+    constants_list = []
     while True:
         try:
-            line = fileit.next()
+            current_line = file_iterator.next()
         except StopIteration:
             break
 
         # Check if this is the end of the constants section (start of a new area)
-        area = matchers.is_area(line)
+        area = matchers.is_area(current_line)
         if area:
-            fileit.prev()  # Set back as this line is not part of the constants section
+            file_iterator.prev()  # Set back as this line is not part of the constants section
             break
 
         # Parse constant if a constant label is found
-        clabel = matchers.is_constant_label(line)
-        if clabel:
-            constants += [parse_constant(fileit, clabel)]
+        constant_label = matchers.is_constant_label(current_line)
+        if constant_label:
+            constants_list += [parse_constant(file_iterator, constant_label)]
 
     if settings.debug:
-        print(f"Line {fileit.index}: Constants section ends here")
+        print(f"Line {file_iterator.index}: Constants section ends here")
 
-    return constants
+    return constants_list
 
 
-def parse_function(fileit, label):
+def parse_function(file_iterator, label):
     """
     Parses a function and returns a Function object.
 
@@ -271,108 +275,110 @@ def parse_function(fileit, label):
         - Detecting the end of the function
 
     Args:
-        fileit (FileIterator): The file iterator to parse.
+        file_iterator (FileIterator): The file iterator to parse.
         label (str): The label of the function.
 
     Returns:
         Function: The parsed Function object.
     """
     if settings.debug:
-        print(f"Line {fileit.index}: Function {label} starts here")
+        print(f"Line {file_iterator.index}: Function {label} starts here")
 
-    ret = analysis.Function(fileit.path, label, fileit.index)
+    ret_function = analysis.Function(file_iterator.path, label, file_iterator.index)
     while True:
         try:
-            line = fileit.next()
+            current_line = file_iterator.next()
         except StopIteration:
             break
 
         # Ignore comments
-        if matchers.is_comment(line):
+        if matchers.is_comment(current_line):
             continue
 
         # Check if this is an IRQ handler
-        if matchers.is_iret(line):
+        if matchers.is_iret(current_line):
             if settings.debug:
-                print(f"Line {fileit.index}: Function {label} detected as IRQ Handler")
-            ret.isr = True
+                print(
+                    f"Line {file_iterator.index}: Function {label} detected as IRQ Handler"
+                )
+            ret_function.isr = True
             continue
 
         # Check if this is the end of the function
-        if matchers.is_function_label(line) or matchers.is_area(line):
+        if matchers.is_function_label(current_line) or matchers.is_area(current_line):
             # Set back as this line is not part of the function
-            fileit.prev()
-            ret.end_line = fileit.index
+            file_iterator.prev()
+            ret_function.end_line = file_iterator.index
             break
 
         # From here on we can assume the function is not empty
-        ret.empty = False
+        ret_function.empty = False
 
         # Keep track of calls made by this function
-        call = matchers.is_call(line)
-        if call:
+        call_match = matchers.is_call(current_line)
+        if call_match:
             if settings.debug:
-                print(f"Line {fileit.index}: Call to {call}")
-            if call not in ret.calls_str:
-                ret.calls_str.append(call)
+                print(f"Line {file_iterator.index}: Call to {call_match}")
+            if call_match not in ret_function.calls_str:
+                ret_function.calls_str.append(call_match)
             continue
 
         # Keep track of labels read by long address capable instructions
         # Note that calls are excluded from this list as they are already
         # handled above
-        match = matchers.is_long_label_read(line)
-        if match:
-            op, lbls = match
-            for l in lbls:
+        match_long_label_read = matchers.is_long_label_read(current_line)
+        if match_long_label_read:
+            operation, long_labels = match_long_label_read
+            for long_label in long_labels:
                 if settings.debug:
                     print(
-                        f"Line {fileit.index} ({op}): long address label {l} is read here"
+                        f"Line {file_iterator.index} ({operation}): long address label {long_label} is read here"
                     )
-                if l not in ret.long_read_labels_str:
-                    ret.long_read_labels_str.append(l)
+                if long_label not in ret_function.long_read_labels_str:
+                    ret_function.long_read_labels_str.append(long_label)
             continue
 
     if settings.debug:
-        if ret.empty:
-            print(f"Line {fileit.index}: Function {label} is empty!")
-        print(f"Line {fileit.index}: Function {label} ends here")
+        if ret_function.empty:
+            print(f"Line {file_iterator.index}: Function {label} is empty!")
+        print(f"Line {file_iterator.index}: Function {label} ends here")
 
-    return ret
+    return ret_function
 
 
-def parse_constant(fileit, label):
+def parse_constant(file_iterator, label):
     """
     Parses a constant and returns a Constant object.
 
     Args:
-        fileit (FileIterator): The file iterator to parse.
+        file_iterator (FileIterator): The file iterator to parse.
         label (str): The label of the constant.
 
     Returns:
         Constant: The parsed Constant object.
     """
     if settings.debug:
-        print(f"Line {fileit.index}: Constant {label} starts here")
+        print(f"Line {file_iterator.index}: Constant {label} starts here")
 
-    ret = analysis.Constant(fileit.path, label, fileit.index)
+    ret_constant = analysis.Constant(file_iterator.path, label, file_iterator.index)
     while True:
         try:
-            line = fileit.next()
+            current_line = file_iterator.next()
         except StopIteration:
             break
 
         # Ignore comments
-        if matchers.is_comment(line):
+        if matchers.is_comment(current_line):
             continue
 
         # Check if this is the end of the constant
-        if matchers.is_constant_label(line) or matchers.is_area(line):
+        if matchers.is_constant_label(current_line) or matchers.is_area(current_line):
             # Set back as this line is not part of the constant
-            fileit.prev()
-            ret.end_line = fileit.index
+            file_iterator.prev()
+            ret_constant.end_line = file_iterator.index
             break
 
     if settings.debug:
-        print(f"Line {fileit.index}: Constant {label} ends here")
+        print(f"Line {file_iterator.index}: Constant {label} ends here")
 
-    return ret
+    return ret_constant

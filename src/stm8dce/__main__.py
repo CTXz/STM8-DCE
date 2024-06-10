@@ -125,8 +125,8 @@ def main():
         exit(1)
 
     # Copy all files to args.output directory
-    for file in args.input:
-        shutil.copy(file, args.output)
+    for asm_file in args.input:
+        shutil.copy(asm_file, args.output)
 
     # ==========================================
     # ASM Parsing
@@ -141,13 +141,15 @@ def main():
     interrupts = []
     functions = []
     constants = []
-    for file in os.listdir(args.output):
-        if file.endswith(".asm"):
-            g, i, c, f = parsers.parse_file(args.output + "/" + file)
-            globals += g
-            interrupts += i
-            constants += c
-            functions += f
+    for output_file in os.listdir(args.output):
+        if output_file.endswith(".asm"):
+            g_defs, i_defs, c_defs, f_defs = parsers.parse_file(
+                args.output + "/" + output_file
+            )
+            globals += g_defs
+            interrupts += i_defs
+            constants += c_defs
+            functions += f_defs
 
     # ==========================================
     # Reference Resolution
@@ -159,8 +161,8 @@ def main():
         print("Resolving globals assigned to functions")
         debug.pseperator()
 
-    for f in functions:
-        f.resolve_globals(globals)
+    for function in functions:
+        function.resolve_globals(globals)
 
     # Resolve interrupts
     if settings.debug:
@@ -168,8 +170,8 @@ def main():
         print("Resolving interrupts")
         debug.pseperator()
 
-    for f in functions:
-        f.resolve_isr(interrupts)
+    for function in functions:
+        function.resolve_isr(interrupts)
 
     # Resolve function calls
     if settings.debug:
@@ -177,8 +179,8 @@ def main():
         print("Resolving function calls")
         debug.pseperator()
 
-    for f in functions:
-        f.resolve_calls(functions)
+    for function in functions:
+        function.resolve_calls(functions)
 
     # Resolve function pointers
     if settings.debug:
@@ -186,8 +188,8 @@ def main():
         print("Resolving function pointers")
         debug.pseperator()
 
-    for f in functions:
-        f.resolve_fptrs(functions)
+    for function in functions:
+        function.resolve_fptrs(functions)
 
     # Resolve globals assigned to constants
     if settings.debug:
@@ -195,8 +197,8 @@ def main():
         print("Resolving globals assigned to constants")
         debug.pseperator()
 
-    for c in constants:
-        c.resolve_globals(globals)
+    for constant in constants:
+        constant.resolve_globals(globals)
 
     # Resolve constants loaded by functions
     if settings.debug:
@@ -204,179 +206,197 @@ def main():
         print("Resolving constants loaded by functions")
         debug.pseperator()
 
-    for f in functions:
-        f.resolve_constants(constants)
+    for function in functions:
+        function.resolve_constants(constants)
 
     # ==========================================
     # Dead Code Evaluation
     # ==========================================
 
     # Get entry function object
-    mainf = analysis.functions_by_name(functions, args.entry)
-    if not mainf:
+    entry_function = analysis.functions_by_name(functions, args.entry)
+    if not entry_function:
         print(f"Error: Entry label not found: {args.entry}")
         exit(1)
-    elif len(mainf) > 1:
+    elif len(entry_function) > 1:
         print(f"Error: Multiple definitions for entry label: {args.entry}")
-        for f in mainf:
-            print(f"In file {f.path}:{f.start_line}")
+        for entry_func in entry_function:
+            print(f"In file {entry_func.path}:{entry_func.start_line}")
         exit(1)
 
-    mainf = mainf[0]
+    entry_function = entry_function[0]
 
     # Keep main function and all of its traversed calls
     if settings.debug:
         print()
         print(f"Traversing entry function: {args.entry}")
         debug.pseperator()
-    keepf = [mainf] + analysis.traverse_calls(functions, mainf)
+    keep_functions = [entry_function] + analysis.traverse_calls(
+        functions, entry_function
+    )
 
     # Keep functions assigned to a function pointer
-    for f in functions:
-        for fp in f.fptrs:
-            if fp not in keepf:
+    for func in functions:
+        for func_pointer in func.fptrs:
+            if func_pointer not in keep_functions:
                 if settings.debug:
                     print()
                     print(
-                        f"Traversing function assigned to function pointer: {fp.name}"
+                        f"Traversing function assigned to function pointer: {func_pointer.name}"
                     )
                     debug.pseperator()
-                keepf += [fp] + analysis.traverse_calls(functions, fp)
+                keep_functions += [func_pointer] + analysis.traverse_calls(
+                    functions, func_pointer
+                )
 
     # Keep interrupt handlers and all of their traversed calls
     # but exclude unused IRQ handlers if opted by the user
-    ihandlers = analysis.interrupt_handlers(functions)
-    for ih in ihandlers:
-        if settings.opt_irq and ih.empty:
+    interrupt_handlers = analysis.interrupt_handlers(functions)
+    for handler in interrupt_handlers:
+        if settings.opt_irq and handler.empty:
             continue
         if settings.debug:
             print()
-            print(f"Traversing IRQ handler: {ih.name}")
+            print(f"Traversing IRQ handler: {handler.name}")
             debug.pseperator()
-        keepf += [ih] + analysis.traverse_calls(functions, ih)
+        keep_functions += [handler] + analysis.traverse_calls(functions, handler)
 
     # Keep functions excluded by the user and all of their traversed calls
     if args.exclude_function:
-        for name in args.exclude_function:
-            filename, name = eval_flabel(name)
+        for exclude_name in args.exclude_function:
+            filename, name = eval_flabel(exclude_name)
             if filename:
-                f = analysis.function_by_filename_name(functions, filename, name)
+                excluded_function = analysis.function_by_filename_name(
+                    functions, filename, name
+                )
             else:
-                f = analysis.functions_by_name(functions, name)
-                if len(f) > 1:
+                excluded_function = analysis.functions_by_name(functions, name)
+                if len(excluded_function) > 1:
                     print(
                         f"Error: Multiple possible definitions for excluded function: {name}"
                     )
-                    for f in f:
-                        print(f"In file {f.path}:{f.start_line}")
+                    for ex_func in excluded_function:
+                        print(f"In file {ex_func.path}:{ex_func.start_line}")
                     print(
                         "Please use the format file.asm:label to specify the exact function to exclude"
                     )
                     exit(1)
-                f = f[0] if f else None
+                excluded_function = excluded_function[0] if excluded_function else None
 
-            if not f:
+            if not excluded_function:
                 print(f"Warning: Excluded function not found: {name}")
                 continue
 
-            if f not in keepf:
+            if excluded_function not in keep_functions:
                 if settings.debug:
                     print()
                     print(f"Traversing excluded function: {name}")
                     debug.pseperator()
-                keepf += [f] + analysis.traverse_calls(functions, f)
+                keep_functions += [excluded_function] + analysis.traverse_calls(
+                    functions, excluded_function
+                )
 
     # Keep functions that may be required by SDCC
-    for name in SDCC_REQ:
-        f = analysis.functions_by_name(functions, name)
+    for required_name in SDCC_REQ:
+        required_function = analysis.functions_by_name(functions, required_name)
 
-        if not f:
+        if not required_function:
             continue
 
-        if len(f) > 1:
+        if len(required_function) > 1:
             print(
-                f"Error: Multiple possible definitions for SDCC required function: {name}"
+                f"Error: Multiple possible definitions for SDCC required function: {required_name}"
             )
-            for f in f:
-                print(f"In file {f.path}:{f.start_line}")
+            for req_func in required_function:
+                print(f"In file {req_func.path}:{req_func.start_line}")
             exit(1)
 
-        f = f[0]
+        required_function = required_function[0]
 
-        if f not in keepf:
+        if required_function not in keep_functions:
             if settings.debug:
                 print()
-                print(f"Traversing SDCC required function: {name}")
+                print(f"Traversing SDCC required function: {required_name}")
                 debug.pseperator()
-            keepf += [f] + analysis.traverse_calls(functions, f)
+            keep_functions += [required_function] + analysis.traverse_calls(
+                functions, required_function
+            )
 
     # Remove duplicates
-    keepf = list(set(keepf))
+    keep_functions = list(set(keep_functions))
 
     # Keep constants loaded by kept functions
-    keepc = []
-    for f in keepf:
-        keepc += f.constants
+    keep_constants = []
+    for kept_function in keep_functions:
+        keep_constants += kept_function.constants
 
     # Keep excluded constants
     if args.exclude_constant:
-        for name in args.exclude_constant:
-            filename, name = eval_flabel(name)
+        for excluded_const_name in args.exclude_constant:
+            filename, name = eval_flabel(excluded_const_name)
             if filename:
-                c = analysis.constant_by_filename_name(constants, filename, name)
+                excluded_constant = analysis.constant_by_filename_name(
+                    constants, filename, name
+                )
             else:
-                c = analysis.constants_by_name(constants, name)
-                if len(c) > 1:
+                excluded_constant = analysis.constants_by_name(constants, name)
+                if len(excluded_constant) > 1:
                     print(
                         f"Error: Multiple possible definitions for excluded constant: {name}"
                     )
-                    for c in c:
-                        print(f"In file {c.path}:{c.start_line}")
+                    for exc_const in excluded_constant:
+                        print(f"In file {exc_const.path}:{exc_const.start_line}")
                     print(
                         "Please use the format file.asm:label to specify the exact constant to exclude"
                     )
                     exit(1)
-                c = c[0] if c else None
+                excluded_constant = excluded_constant[0] if excluded_constant else None
 
-            if not c:
+            if not excluded_constant:
                 print(f"Warning: Excluded constant not found: {name}")
                 continue
 
-            if c and (c not in keepc):
-                keepc.append(c)
+            if excluded_constant and (excluded_constant not in keep_constants):
+                keep_constants.append(excluded_constant)
 
     # Remove duplicates
-    keepc = list(set(keepc))
+    keep_constants = list(set(keep_constants))
 
-    # Remove functions that are not in keepf
-    removef = [f for f in functions if f not in keepf]
+    # Remove functions that are not in keep_functions
+    remove_functions = [func for func in functions if func not in keep_functions]
 
     # Remove global labels assigned to removed functions
-    removeg = []
-    for f in removef:
-        removeg += f.global_defs
+    remove_globals = []
+    for removed_function in remove_functions:
+        remove_globals += removed_function.global_defs
 
     # Remove interrupt definitions assigned to removed IRQ handlers
-    removei = []
-    for f in removef:
-        if f.isr_def:
-            removei.append(f.isr_def)
+    remove_interrupts = []
+    for removed_function in remove_functions:
+        if removed_function.isr_def:
+            remove_interrupts.append(removed_function.isr_def)
 
-    # Remove constants that are not in keepc
-    removec = [c for c in constants if c not in keepc]
+    # Remove constants that are not in keep_constants
+    remove_constants = [const for const in constants if const not in keep_constants]
 
     # Remove global labels assigned to removed constants
-    removeg += [g for c in removec for g in c.global_defs]
+    remove_globals += [
+        glob_def for const in remove_constants for glob_def in const.global_defs
+    ]
 
     if settings.verbose:
         print()
         print("Removing Functions:")
-        for f in removef:
-            print(f"\t{f.name} - {f.path}:{f.start_line}")
+        for removed_function in remove_functions:
+            print(
+                f"\t{removed_function.name} - {removed_function.path}:{removed_function.start_line}"
+            )
         print()
         print("Removing Constants:")
-        for c in removec:
-            print(f"\t{c.name} - {c.path}:{c.start_line}")
+        for removed_constant in remove_constants:
+            print(
+                f"\t{removed_constant.name} - {removed_constant.path}:{removed_constant.start_line}"
+            )
         print()
 
     # ==========================================
@@ -384,109 +404,117 @@ def main():
     # ==========================================
 
     # Group functions, globals, int defs and constants by file to reduce file I/O
-    filef = {}
-    fileg = {}
-    filei = {}
-    filec = {}
-    for f in removef:
-        if f.path not in filef:
-            filef[f.path] = []
-        filef[f.path].append(f)
-    for g in removeg:
-        if g.path not in fileg:
-            fileg[g.path] = []
-        fileg[g.path].append(g)
-    for i in removei:
-        if i.path not in filei:
-            filei[i.path] = []
-        filei[i.path].append(i)
-    for c in removec:
-        if c.path not in filec:
-            filec[c.path] = []
-        filec[c.path].append(c)
+    file_functions = {}
+    file_globals = {}
+    file_interrupts = {}
+    file_constants = {}
+    for removed_function in remove_functions:
+        if removed_function.path not in file_functions:
+            file_functions[removed_function.path] = []
+        file_functions[removed_function.path].append(removed_function)
+    for removed_global in remove_globals:
+        if removed_global.path not in file_globals:
+            file_globals[removed_global.path] = []
+        file_globals[removed_global.path].append(removed_global)
+    for removed_interrupt in remove_interrupts:
+        if removed_interrupt.path not in file_interrupts:
+            file_interrupts[removed_interrupt.path] = []
+        file_interrupts[removed_interrupt.path].append(removed_interrupt)
+    for removed_constant in remove_constants:
+        if removed_constant.path not in file_constants:
+            file_constants[removed_constant.path] = []
+        file_constants[removed_constant.path].append(removed_constant)
 
     # Remove (comment out) unused functions,
     # global definitions, interrupt definitions
     # and constants from the files
-    for file in filef:
-        with open(file, "r") as f:
-            lines = f.readlines()
+    for file_path in file_functions:
+        with open(file_path, "r") as file:
+            lines = file.readlines()
 
         # Global definitions
-        if file in fileg:
-            for g in fileg[file]:
-                lines[g.line - 1] = ";" + lines[g.line - 1]
-            fileg[file].remove(g)
+        if file_path in file_globals:
+            for global_def in file_globals[file_path]:
+                lines[global_def.line - 1] = ";" + lines[global_def.line - 1]
+            file_globals[file_path].remove(global_def)
 
         # Interrupt definitions
         # These must be set to 0x000000 instead of being commented out.
         # else remaining IRQ handlers will be moved to a different VTABLE
         # entry!
-        if file in filei:
-            for i in filei[file]:
-                lines[i.line - 1] = "    int 0x000000\n"
-            filei[file].remove(i)
+        if file_path in file_interrupts:
+            for interrupt_def in file_interrupts[file_path]:
+                lines[interrupt_def.line - 1] = "    int 0x000000\n"
+            file_interrupts[file_path].remove(interrupt_def)
 
         # Functions
-        if file in filef:
-            for f in filef[file]:
-                for i in range(f.start_line - 1, f.end_line):
-                    lines[i] = ";" + lines[i]
+        if file_path in file_functions:
+            for function_def in file_functions[file_path]:
+                for func_line in range(
+                    function_def.start_line - 1, function_def.end_line
+                ):
+                    lines[func_line] = ";" + lines[func_line]
 
         # Constants
-        if file in filec:
-            for c in filec[file]:
-                for i in range(c.start_line - 1, c.end_line):
-                    lines[i] = ";" + lines[i]
+        if file_path in file_constants:
+            for constant_def in file_constants[file_path]:
+                for const_line in range(
+                    constant_def.start_line - 1, constant_def.end_line
+                ):
+                    lines[const_line] = ";" + lines[const_line]
 
-        with open(file, "w") as f:
-            f.writelines(lines)
+        with open(file_path, "w") as file:
+            file.writelines(lines)
 
     # Remove any remaining global definitions
     # assigned to removed functions
     # This catches any global labels that import unused
     # functions from other files
-    for file in fileg:
-        with open(file, "r") as f:
-            lines = f.readlines()
+    for file_path in file_globals:
+        with open(file_path, "r") as file:
+            lines = file.readlines()
 
-        for g in fileg[file]:
-            lines[g.line - 1] = ";" + lines[g.line - 1]
+        for global_def in file_globals[file_path]:
+            lines[global_def.line - 1] = ";" + lines[global_def.line - 1]
 
-        with open(file, "w") as f:
-            f.writelines(lines)
+        with open(file_path, "w") as file:
+            file.writelines(lines)
 
     # Remove interrupt definitions assigned to removed IRQ handlers
     # if they haven't already been removed
-    for file in filei:
-        with open(file, "r") as f:
-            lines = f.readlines()
+    for file_path in file_interrupts:
+        with open(file_path, "r") as file:
+            lines = file.readlines()
 
-        for i in filei[file]:
-            lines[i.line - 1] = "    int 0x000000\n"
+        for interrupt_def in file_interrupts[file_path]:
+            lines[interrupt_def.line - 1] = "    int 0x000000\n"
 
-        with open(file, "w") as f:
-            f.writelines(lines)
+        with open(file_path, "w") as file:
+            file.writelines(lines)
 
     # Remove any remaining constants
-    for file in filec:
-        with open(file, "r") as f:
-            lines = f.readlines()
+    for file_path in file_constants:
+        with open(file_path, "r") as file:
+            lines = file.readlines()
 
-        for c in filec[file]:
-            for i in range(c.start_line - 1, c.end_line):
-                lines[i] = ";" + lines[i]
+        for constant_def in file_constants[file_path]:
+            for const_line in range(constant_def.start_line - 1, constant_def.end_line):
+                lines[const_line] = ";" + lines[const_line]
 
-        with open(file, "w") as f:
-            f.writelines(lines)
+        with open(file_path, "w") as file:
+            file.writelines(lines)
 
     # ==========================================
     # Summary
     # ==========================================
 
     print("Detected and removed:")
-    print(f"{len(removef)} unused functions from a total of {len(functions)} functions")
-    print(f"{len(removec)} unused constants from a total of {len(constants)} constants")
+    print(
+        f"{len(remove_functions)} unused functions from a total of {len(functions)} functions"
+    )
+    print(
+        f"{len(remove_constants)} unused constants from a total of {len(constants)} constants"
+    )
 
 
 if __name__ == "__main__":
