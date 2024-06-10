@@ -270,9 +270,13 @@ def is_long_label_read(line):
     mnem, *args = split
     eval_args = args if len(args) == 3 else args[1:] if len(args) == 2 else args
 
+    labels = []
     for arg in eval_args:
         label = extract_label(arg)
-        if label:
-            return mnem, label
+        if label and label not in labels:
+            labels.append(label)
+
+    if labels:
+        return mnem, labels
 
     return None

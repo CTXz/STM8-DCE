@@ -243,17 +243,18 @@ def parse_function(fileit, label):
         # handled above
         match = matchers.is_long_label_read(line)
         if match:
-            op, l = match
+            op, lbls = match
 
-            if settings.debug:
-                print(
-                    "Line {} ({}): long address label {} is read here".format(
-                        fileit.index, op, l
+            for l in lbls:
+                if settings.debug:
+                    print(
+                        "Line {} ({}): long address label {} is read here".format(
+                            fileit.index, op, l
+                        )
                     )
-                )
 
-            if l not in ret.long_read_labels_str:
-                ret.long_read_labels_str.append(l)
+                if l not in ret.long_read_labels_str:
+                    ret.long_read_labels_str.append(l)
 
             continue
 
