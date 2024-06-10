@@ -259,8 +259,9 @@ def parse_function(file_iterator, label):
 
     Parsing includes:
         - Detecting if the function is empty
-        - Detecting calls made by the function
         - Detecting if the function is an IRQ handler
+        - Detecting calls made by the function
+        - Detecting labels read by long address capable instructions
         - Detecting the end of the function
 
     Args:
