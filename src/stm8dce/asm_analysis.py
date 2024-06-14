@@ -116,7 +116,9 @@ class Function:
         self.long_read_labels_str = []
 
         self.calls = []
+        self.external_calls = []
         self.constants = []
+        self.external_constants = []
         self.global_defs = []
         self.fptrs = []
         self.isr_def = None
@@ -137,7 +139,9 @@ class Function:
         print(f"Calls: {self.calls_str}")
         print(f"Long read labels: {self.long_read_labels_str}")
         print(f"Resolved calls: {[call.name for call in self.calls]}")
+        print(f"External calls: {self.external_calls}")
         print(f"Resolved constants: {[const.name for const in self.constants]}")
+        print(f"External constants: {self.external_constants}")
         print(
             f"Resolved global definitions: {[glob.name for glob in self.global_defs]}"
         )
@@ -185,6 +189,14 @@ class Function:
         for call_str in self.calls_str:
             funcs = functions_by_name(functions, call_str)
 
+            # Probably call to external function (ex. in rel or lib)
+            if not funcs:
+                self.external_calls.append(call_str)
+                debug.pdbg(
+                    f"Function {self.name} in {self.path}:{self.start_line} calls external function {call_str}"
+                )
+                continue
+
             glob = any(f.global_defs for f in funcs)
 
             if glob:
@@ -212,6 +224,7 @@ class Function:
                         debug.pdbg(
                             f"Function {self.name} in {self.path}:{self.start_line} calls static function {func.name} in {func.path}:{func.start_line}"
                         )
+                        matched = True
 
     def resolve_fptrs(self, functions):
         """
@@ -237,6 +250,13 @@ class Function:
         """
         for long_read_label in self.long_read_labels_str:
             consts = constants_by_name(constants, long_read_label)
+
+            if not consts:
+                self.external_constants.append(long_read_label)
+                debug.pdbg(
+                    f"Function {self.name} in {self.path}:{self.start_line} reads external constant {long_read_label}"
+                )
+                continue
 
             glob = any(const.global_defs for const in consts)
 
@@ -359,6 +379,25 @@ def function_by_filename_name(functions, filename, name):
                 exit(1)
             ret = function
     return ret
+
+
+def functions_referencing_external(functions, external_symbol):
+    """
+    Returns a list of function objects referencing an external symbol.
+
+    Args:
+        functions (list): List of Function objects.
+        external_symbol (str): Name of the external symbol to match.
+
+    Returns:
+        list: List of matching Function objects.
+    """
+    return [
+        function
+        for function in functions
+        if external_symbol in function.external_calls
+        or external_symbol in function.external_constants
+    ]
 
 
 def constants_by_name(constants, name):

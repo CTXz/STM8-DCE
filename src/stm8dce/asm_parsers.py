@@ -19,70 +19,10 @@ This module provides classes and functions to parse STM8 SDCC generated assembly
 
 from . import settings
 from . import debug
-from . import matchers
-from . import analysis
+from . import asm_matchers
+from . import asm_analysis
 
-############################################
-# Classes
-############################################
-
-
-class FileIterator:
-    """
-    Class to iterate over lines in a file.
-
-    Attributes:
-        path (str): The path of the file.
-        index (int): The current line number.
-    """
-
-    def __init__(self, file_obj):
-        """
-        Initializes the FileIterator with the given file object.
-
-        Args:
-            file_obj (file): The file object to iterate over.
-        """
-        self.path = file_obj.name
-        self.iterable = file_obj.readlines()
-        self.index = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        """
-        Returns the next line in the file.
-
-        Returns:
-            str: The next line in the file.
-
-        Raises:
-            StopIteration: If the end of the file is reached.
-        """
-        if self.index < len(self.iterable):
-            ret_line = self.iterable[self.index]
-            self.index += 1
-            return ret_line
-        else:
-            raise StopIteration
-
-    def prev(self):
-        """
-        Moves back one line in the file.
-
-        Returns:
-            str: The previous line in the file.
-
-        Raises:
-            StopIteration: If the beginning of the file is reached.
-        """
-        if self.index > 0:
-            self.index -= 1
-            return self.iterable[self.index]
-        else:
-            raise StopIteration
-
+from .FileIterator import FileIterator
 
 ############################################
 # Parsing
@@ -146,25 +86,27 @@ def parse(file_iterator):
             break
 
         # Global definitions
-        global_defs = matchers.is_global_defs(current_line)
+        global_defs = asm_matchers.is_global_defs(current_line)
         if global_defs:
             globals_list.append(
-                analysis.GlobalDef(file_iterator.path, global_defs, file_iterator.index)
+                asm_analysis.GlobalDef(
+                    file_iterator.path, global_defs, file_iterator.index
+                )
             )
             debug.pdbg(f"Line {file_iterator.index}: Global definition {global_defs}")
             continue
 
         # Interrupt definitions
-        int_def = matchers.is_int_def(current_line)
+        int_def = asm_matchers.is_int_def(current_line)
         if int_def:
             interrupts_list.append(
-                analysis.IntDef(file_iterator.path, int_def, file_iterator.index)
+                asm_analysis.IntDef(file_iterator.path, int_def, file_iterator.index)
             )
             debug.pdbg(f"Line {file_iterator.index}: Interrupt definition {int_def}")
             continue
 
         # Code section
-        area = matchers.is_area(current_line)
+        area = asm_matchers.is_area(current_line)
         if area == "CODE":
             functions_list += parse_code_section(file_iterator)
 
@@ -199,13 +141,13 @@ def parse_code_section(file_iterator):
             break
 
         # Check if this is the end of the code section (start of a new area)
-        area = matchers.is_area(current_line)
+        area = asm_matchers.is_area(current_line)
         if area:
             file_iterator.prev()  # Set back as this line is not part of the code section
             break
 
         # Parse function if a function label is found
-        function_label = matchers.is_function_label(current_line)
+        function_label = asm_matchers.is_function_label(current_line)
         if function_label:
             functions_list += [parse_function(file_iterator, function_label)]
 
@@ -238,13 +180,13 @@ def parse_const_section(file_iterator):
             break
 
         # Check if this is the end of the constants section (start of a new area)
-        area = matchers.is_area(current_line)
+        area = asm_matchers.is_area(current_line)
         if area:
             file_iterator.prev()  # Set back as this line is not part of the constants section
             break
 
         # Parse constant if a constant label is found
-        constant_label = matchers.is_constant_label(current_line)
+        constant_label = asm_matchers.is_constant_label(current_line)
         if constant_label:
             constants_list += [parse_constant(file_iterator, constant_label)]
 
@@ -273,7 +215,7 @@ def parse_function(file_iterator, label):
     """
     debug.pdbg(f"Line {file_iterator.index}: Function {label} starts here")
 
-    ret_function = analysis.Function(file_iterator.path, label, file_iterator.index)
+    ret_function = asm_analysis.Function(file_iterator.path, label, file_iterator.index)
     while True:
         try:
             current_line = file_iterator.next()
@@ -281,11 +223,11 @@ def parse_function(file_iterator, label):
             break
 
         # Ignore comments
-        if matchers.is_comment(current_line):
+        if asm_matchers.is_comment(current_line):
             continue
 
         # Check if this is an IRQ handler
-        if matchers.is_iret(current_line):
+        if asm_matchers.is_iret(current_line):
             debug.pdbg(
                 f"Line {file_iterator.index}: Function {label} detected as IRQ Handler"
             )
@@ -293,7 +235,9 @@ def parse_function(file_iterator, label):
             continue
 
         # Check if this is the end of the function
-        if matchers.is_function_label(current_line) or matchers.is_area(current_line):
+        if asm_matchers.is_function_label(current_line) or asm_matchers.is_area(
+            current_line
+        ):
             # Set back as this line is not part of the function
             file_iterator.prev()
             ret_function.end_line = file_iterator.index
@@ -303,7 +247,7 @@ def parse_function(file_iterator, label):
         ret_function.empty = False
 
         # Keep track of calls made by this function
-        call_match = matchers.is_call(current_line)
+        call_match = asm_matchers.is_call(current_line)
         if call_match:
             debug.pdbg(f"Line {file_iterator.index}: Call to {call_match}")
             if call_match not in ret_function.calls_str:
@@ -313,7 +257,7 @@ def parse_function(file_iterator, label):
         # Keep track of labels read by long address capable instructions
         # Note that calls are excluded from this list as they are already
         # handled above
-        match_long_label_read = matchers.is_long_label_read(current_line)
+        match_long_label_read = asm_matchers.is_long_label_read(current_line)
         if match_long_label_read:
             operation, long_labels = match_long_label_read
             for long_label in long_labels:
@@ -344,7 +288,7 @@ def parse_constant(file_iterator, label):
     """
     debug.pdbg(f"Line {file_iterator.index}: Constant {label} starts here")
 
-    ret_constant = analysis.Constant(file_iterator.path, label, file_iterator.index)
+    ret_constant = asm_analysis.Constant(file_iterator.path, label, file_iterator.index)
     while True:
         try:
             current_line = file_iterator.next()
@@ -352,11 +296,13 @@ def parse_constant(file_iterator, label):
             break
 
         # Ignore comments
-        if matchers.is_comment(current_line):
+        if asm_matchers.is_comment(current_line):
             continue
 
         # Check if this is the end of the constant
-        if matchers.is_constant_label(current_line) or matchers.is_area(current_line):
+        if asm_matchers.is_constant_label(current_line) or asm_matchers.is_area(
+            current_line
+        ):
             # Set back as this line is not part of the constant
             file_iterator.prev()
             ret_constant.end_line = file_iterator.index

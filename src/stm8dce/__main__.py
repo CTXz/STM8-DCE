@@ -28,21 +28,12 @@ import os
 import argparse
 import shutil
 
-from . import parsers
+from . import asm_parsers
+from . import rel_parsers
 from . import debug
-from . import analysis
+from . import asm_analysis
 from . import settings
 from .__init__ import __version__
-
-############################################
-# Constants
-############################################
-
-# List of functions that SDCC may require
-SDCC_REQ = [
-    "_getchar",  # See 3.14.2 of the SDCC manual
-    "_putchar",  # See 3.14.2 of the SDCC manual
-]
 
 ############################################
 # Arg Parsing
@@ -82,7 +73,9 @@ def main():
     # Arg Parsing
     # ==========================================
     parser = argparse.ArgumentParser(description="STM8 SDCC dead code elimination tool")
-    parser.add_argument("input", nargs="+", help="ASM files to process", type=str)
+    parser.add_argument(
+        "input", nargs="+", help="ASM, rel and lib files to process", type=str
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -111,7 +104,9 @@ def main():
         action="store_true",
     )
 
-    parser.epilog = "Example: stm8dce file1.asm file2.asm ... -o output/"
+    parser.epilog = (
+        "Example: stm8dce file1.asm file2.asm file3.rel file4.lib ... -o output/"
+    )
 
     args = parser.parse_args()
 
@@ -124,13 +119,22 @@ def main():
         print(f"Error: Output directory does not exist: {args.output}")
         exit(1)
 
-    # Copy all files to args.output directory
-    for asm_file in args.input:
-        shutil.copy(asm_file, args.output)
+    # ==========================================
+    # rel and lib Parsing
+    # ==========================================
+
+    modules = []
+    for input_file in args.input:
+        if input_file.endswith(".rel") or input_file.endswith(".lib"):
+            modules += rel_parsers.parse_file(input_file)
 
     # ==========================================
     # ASM Parsing
     # ==========================================
+
+    # Copy all files to args.output directory
+    for asm_file in args.input:
+        shutil.copy(asm_file, args.output)
 
     # Parse all asm files for globals, interrupts, functions and constants
     # - globals is a list of GlobalDef objects
@@ -143,7 +147,7 @@ def main():
     constants = []
     for output_file in os.listdir(args.output):
         if output_file.endswith(".asm"):
-            g_defs, i_defs, c_defs, f_defs = parsers.parse_file(
+            g_defs, i_defs, c_defs, f_defs = asm_parsers.parse_file(
                 args.output + "/" + output_file
             )
             globals += g_defs
@@ -209,12 +213,16 @@ def main():
     for function in functions:
         function.resolve_constants(constants)
 
+    # Resolve external references
+    for module in modules:
+        module.resolve_references(functions, constants)
+
     # ==========================================
     # Dead Code Evaluation
     # ==========================================
 
     # Get entry function object
-    entry_function = analysis.functions_by_name(functions, args.entry)
+    entry_function = asm_analysis.functions_by_name(functions, args.entry)
     if not entry_function:
         print(f"Error: Entry label not found: {args.entry}")
         exit(1)
@@ -231,7 +239,7 @@ def main():
         print()
         print(f"Traversing entry function: {args.entry}")
         debug.pseperator()
-    keep_functions = [entry_function] + analysis.traverse_calls(
+    keep_functions = [entry_function] + asm_analysis.traverse_calls(
         functions, entry_function
     )
 
@@ -245,13 +253,13 @@ def main():
                         f"Traversing function assigned to function pointer: {func_pointer.name}"
                     )
                     debug.pseperator()
-                keep_functions += [func_pointer] + analysis.traverse_calls(
+                keep_functions += [func_pointer] + asm_analysis.traverse_calls(
                     functions, func_pointer
                 )
 
     # Keep interrupt handlers and all of their traversed calls
     # but exclude unused IRQ handlers if opted by the user
-    interrupt_handlers = analysis.interrupt_handlers(functions)
+    interrupt_handlers = asm_analysis.interrupt_handlers(functions)
     for handler in interrupt_handlers:
         if settings.opt_irq and handler.empty:
             continue
@@ -259,18 +267,18 @@ def main():
             print()
             print(f"Traversing IRQ handler: {handler.name}")
             debug.pseperator()
-        keep_functions += [handler] + analysis.traverse_calls(functions, handler)
+        keep_functions += [handler] + asm_analysis.traverse_calls(functions, handler)
 
     # Keep functions excluded by the user and all of their traversed calls
     if args.exclude_function:
         for exclude_name in args.exclude_function:
             filename, name = eval_flabel(exclude_name)
             if filename:
-                excluded_function = analysis.function_by_filename_name(
+                excluded_function = asm_analysis.function_by_filename_name(
                     functions, filename, name
                 )
             else:
-                excluded_function = analysis.functions_by_name(functions, name)
+                excluded_function = asm_analysis.functions_by_name(functions, name)
                 if len(excluded_function) > 1:
                     print(
                         f"Error: Multiple possible definitions for excluded function: {name}"
@@ -292,35 +300,23 @@ def main():
                     print()
                     print(f"Traversing excluded function: {name}")
                     debug.pseperator()
-                keep_functions += [excluded_function] + analysis.traverse_calls(
+                keep_functions += [excluded_function] + asm_analysis.traverse_calls(
                     functions, excluded_function
                 )
 
-    # Keep functions that may be required by SDCC
-    for required_name in SDCC_REQ:
-        required_function = analysis.functions_by_name(functions, required_name)
-
-        if not required_function:
-            continue
-
-        if len(required_function) > 1:
-            print(
-                f"Error: Multiple possible definitions for SDCC required function: {required_name}"
-            )
-            for req_func in required_function:
-                print(f"In file {req_func.path}:{req_func.start_line}")
-            exit(1)
-
-        required_function = required_function[0]
-
-        if required_function not in keep_functions:
-            if settings.debug:
-                print()
-                print(f"Traversing SDCC required function: {required_name}")
-                debug.pseperator()
-            keep_functions += [required_function] + analysis.traverse_calls(
-                functions, required_function
-            )
+    # Keep functions that are referenced by lib and rel files
+    for module in modules:
+        for function in module.references:
+            if function not in keep_functions:
+                if settings.debug:
+                    print()
+                    print(
+                        f"Traversing function {function.name} referenced by module {module.name}"
+                    )
+                    debug.pseperator()
+                keep_functions += [function] + asm_analysis.traverse_calls(
+                    functions, function
+                )
 
     # Remove duplicates
     keep_functions = list(set(keep_functions))
@@ -335,11 +331,11 @@ def main():
         for excluded_const_name in args.exclude_constant:
             filename, name = eval_flabel(excluded_const_name)
             if filename:
-                excluded_constant = analysis.constant_by_filename_name(
+                excluded_constant = asm_analysis.constant_by_filename_name(
                     constants, filename, name
                 )
             else:
-                excluded_constant = analysis.constants_by_name(constants, name)
+                excluded_constant = asm_analysis.constants_by_name(constants, name)
                 if len(excluded_constant) > 1:
                     print(
                         f"Error: Multiple possible definitions for excluded constant: {name}"
