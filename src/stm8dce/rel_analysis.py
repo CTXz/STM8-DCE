@@ -147,3 +147,20 @@ class Module:
                         f"Module {self.name} in {self.path}:{self.line_number} references Constant {constant.name} in {constant.path}:{constant.start_line_number}"
                     )
                     break
+
+
+# Include private members in documentation
+__pdoc__ = {
+    name: True
+    for name, _class in globals().items()
+    if name.startswith("_") and isinstance(_class, type)
+}
+__pdoc__.update(
+    {
+        f"{name}.{member}": True
+        for name, _class in globals().items()
+        if isinstance(_class, type)
+        for member in _class.__dict__.keys()
+        if member not in {"__module__", "__dict__", "__weakref__", "__doc__"}
+    }
+)

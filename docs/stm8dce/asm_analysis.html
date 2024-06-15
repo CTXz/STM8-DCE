@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>stm8dce.asm_analysis API documentation</title>
+<meta name="description" content="This module provides classes and functions helpful for analyzing SDCC generated
+STM8 assembly code." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>stm8dce.asm_analysis</code></h1>
+</header>
+<section id="section-intro">
+<p>This module provides classes and functions helpful for analyzing SDCC generated
+STM8 assembly code.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="stm8dce.asm_analysis.constant_by_filename_name"><code class="name flex">
+<span>def <span class="ident">constant_by_filename_name</span></span>(<span>constants, filename, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a constant object matching by filename and name from a list of constants.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>constants</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Constant objects.</dd>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filename to match.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the constant to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="stm8dce.asm_analysis.Constant" href="#stm8dce.asm_analysis.Constant">Constant</a></code></dt>
+<dd>Matching Constant object.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SystemExit</code></dt>
+<dd>If multiple definitions for the constant are found.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.constants_by_name"><code class="name flex">
+<span>def <span class="ident">constants_by_name</span></span>(<span>constants, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of constant objects with the specified name.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>constants</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Constant objects.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the constant to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of matching Constant objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.function_by_filename_name"><code class="name flex">
+<span>def <span class="ident">function_by_filename_name</span></span>(<span>functions, filename, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a function object matching by filename and name from a list of functions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Function objects.</dd>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filename to match.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the function to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="stm8dce.asm_analysis.Function" href="#stm8dce.asm_analysis.Function">Function</a></code></dt>
+<dd>Matching Function object.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SystemExit</code></dt>
+<dd>If multiple definitions for the function are found.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.functions_by_name"><code class="name flex">
+<span>def <span class="ident">functions_by_name</span></span>(<span>functions, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of function objects with the specified name.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Function objects.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the function to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of matching Function objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.functions_referencing_external"><code class="name flex">
+<span>def <span class="ident">functions_referencing_external</span></span>(<span>functions, external_symbol)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of function objects referencing an external symbol.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Function objects.</dd>
+<dt><strong><code>external_symbol</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the external symbol to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of matching Function objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.interrupt_handlers"><code class="name flex">
+<span>def <span class="ident">interrupt_handlers</span></span>(<span>functions)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of all interrupt handlers in the list of functions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Function objects.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of interrupt handler Function objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.traverse_calls"><code class="name flex">
+<span>def <span class="ident">traverse_calls</span></span>(<span>functions, top)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Traverse all calls made by a function and return a list of all traversed functions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Function objects.</dd>
+<dt><strong><code>top</code></strong> :&ensp;<code><a title="stm8dce.asm_analysis.Function" href="#stm8dce.asm_analysis.Function">Function</a></code></dt>
+<dd>The top function to start traversal from.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of all traversed Function objects.</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="stm8dce.asm_analysis.Constant"><code class="flex name class">
+<span>class <span class="ident">Constant</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store constant definitions.</p>
+<p>Input Attributes:
+path (str): Path of the file the constant is defined in.
+name (str): Name of the constant.
+start_line_number (int): Start line of the constant.
+end_line_number (int): End line of the constant.</p>
+<p>Generated Attributes:
+global_defs (list): List of resolved global definitions associated with the constant (See resolve_globals).</p>
+<p>The intended use of this class is to first parse the input attributes and then call the resolve_* functions</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="stm8dce.asm_analysis.Constant.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, path, start_line_number, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Constant.__repr__"><code class="name flex">
+<span>def <span class="ident">__repr__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return repr(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Constant.__str__"><code class="name flex">
+<span>def <span class="ident">__str__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return str(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Constant.print"><code class="name flex">
+<span>def <span class="ident">print</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prints the details of the constant.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Constant.resolve_globals"><code class="name flex">
+<span>def <span class="ident">resolve_globals</span></span>(<span>self, globals)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves global definitions for the constant.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>globals</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all GlobalDef objects.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="stm8dce.asm_analysis.Function"><code class="flex name class">
+<span>class <span class="ident">Function</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store function definitions.</p>
+<p>Input Attributes:
+path (str): Path of the file the function is defined in.
+name (str): Name of the function.
+start_line_number (int): Start line of the function.
+end_line_number (int): End line of the function.
+calls_str (list): List of calls made by the function.
+long_read_labels_str (list): List of long read labels.</p>
+<p>Generated Attributes:
+calls (list): List of resolved functions called by the function (See resolve_calls).
+constants (list): List of resolved constants read by the function (See resolve_constants).
+global_defs (list): List of resolved global definitions used by the function (See resolve_globals).
+fptrs (list): List of resolved function pointers assigned by the function (See resolve_fptrs).
+isr_def (IntDef): Resolved interrupt definition associated with the function (See resolve_isr).
+empty (bool): Indicates if the function is empty.</p>
+<p>The intended use of this class is to first parse the input attributes and then call the resolve_* functions
+to resolve the generated attributes.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="stm8dce.asm_analysis.Function.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, path, start_line_number, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.__repr__"><code class="name flex">
+<span>def <span class="ident">__repr__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return repr(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.__str__"><code class="name flex">
+<span>def <span class="ident">__str__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return str(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.print"><code class="name flex">
+<span>def <span class="ident">print</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prints the details of the function.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.resolve_calls"><code class="name flex">
+<span>def <span class="ident">resolve_calls</span></span>(<span>self, functions)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves function calls for the function.</p>
+<p>Precondition: Globals of all functions have been resolved first.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all Function objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.resolve_constants"><code class="name flex">
+<span>def <span class="ident">resolve_constants</span></span>(<span>self, constants)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves constants for the function.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>constants</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all Constant objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.resolve_fptrs"><code class="name flex">
+<span>def <span class="ident">resolve_fptrs</span></span>(<span>self, functions)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves function pointers assigned by the function.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all Function objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.resolve_globals"><code class="name flex">
+<span>def <span class="ident">resolve_globals</span></span>(<span>self, globals)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves global definitions for the function.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>globals</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all GlobalDef objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Function.resolve_isr"><code class="name flex">
+<span>def <span class="ident">resolve_isr</span></span>(<span>self, interrupts)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves interrupt definitions for the function.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>interrupts</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all IntDef objects.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="stm8dce.asm_analysis.GlobalDef"><code class="flex name class">
+<span>class <span class="ident">GlobalDef</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store global definitions.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path of the file the global is defined in.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the global.</dd>
+<dt><strong><code>line_number</code></strong> :&ensp;<code>int</code></dt>
+<dd>Line number of the global definition.</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="stm8dce.asm_analysis.GlobalDef.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, path, line_number, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.GlobalDef.__repr__"><code class="name flex">
+<span>def <span class="ident">__repr__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return repr(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.GlobalDef.__str__"><code class="name flex">
+<span>def <span class="ident">__str__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return str(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.GlobalDef.print"><code class="name flex">
+<span>def <span class="ident">print</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prints the details of the global definition.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="stm8dce.asm_analysis.IntDef"><code class="flex name class">
+<span>class <span class="ident">IntDef</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store interrupt definitions.
+Equivalent to GlobalDef, but prints differently.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path of the file the interrupt is defined in.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the interrupt.</dd>
+<dt><strong><code>line_number</code></strong> :&ensp;<code>int</code></dt>
+<dd>Line number of the interrupt definition.</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="stm8dce.asm_analysis.IntDef.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, path, line_number, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.IntDef.__repr__"><code class="name flex">
+<span>def <span class="ident">__repr__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return repr(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.IntDef.__str__"><code class="name flex">
+<span>def <span class="ident">__str__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return str(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.IntDef.print"><code class="name flex">
+<span>def <span class="ident">print</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prints the details of the interrupt definition.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="stm8dce" href="index.html">stm8dce</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="stm8dce.asm_analysis.constant_by_filename_name" href="#stm8dce.asm_analysis.constant_by_filename_name">constant_by_filename_name</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.constants_by_name" href="#stm8dce.asm_analysis.constants_by_name">constants_by_name</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.function_by_filename_name" href="#stm8dce.asm_analysis.function_by_filename_name">function_by_filename_name</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.functions_by_name" href="#stm8dce.asm_analysis.functions_by_name">functions_by_name</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.functions_referencing_external" href="#stm8dce.asm_analysis.functions_referencing_external">functions_referencing_external</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.interrupt_handlers" href="#stm8dce.asm_analysis.interrupt_handlers">interrupt_handlers</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.traverse_calls" href="#stm8dce.asm_analysis.traverse_calls">traverse_calls</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="stm8dce.asm_analysis.Constant" href="#stm8dce.asm_analysis.Constant">Constant</a></code></h4>
+<ul class="">
+<li><code><a title="stm8dce.asm_analysis.Constant.__init__" href="#stm8dce.asm_analysis.Constant.__init__">__init__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Constant.__repr__" href="#stm8dce.asm_analysis.Constant.__repr__">__repr__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Constant.__str__" href="#stm8dce.asm_analysis.Constant.__str__">__str__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Constant.print" href="#stm8dce.asm_analysis.Constant.print">print</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Constant.resolve_globals" href="#stm8dce.asm_analysis.Constant.resolve_globals">resolve_globals</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="stm8dce.asm_analysis.Function" href="#stm8dce.asm_analysis.Function">Function</a></code></h4>
+<ul class="two-column">
+<li><code><a title="stm8dce.asm_analysis.Function.__init__" href="#stm8dce.asm_analysis.Function.__init__">__init__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.__repr__" href="#stm8dce.asm_analysis.Function.__repr__">__repr__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.__str__" href="#stm8dce.asm_analysis.Function.__str__">__str__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.print" href="#stm8dce.asm_analysis.Function.print">print</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.resolve_calls" href="#stm8dce.asm_analysis.Function.resolve_calls">resolve_calls</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.resolve_constants" href="#stm8dce.asm_analysis.Function.resolve_constants">resolve_constants</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.resolve_fptrs" href="#stm8dce.asm_analysis.Function.resolve_fptrs">resolve_fptrs</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.resolve_globals" href="#stm8dce.asm_analysis.Function.resolve_globals">resolve_globals</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Function.resolve_isr" href="#stm8dce.asm_analysis.Function.resolve_isr">resolve_isr</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="stm8dce.asm_analysis.GlobalDef" href="#stm8dce.asm_analysis.GlobalDef">GlobalDef</a></code></h4>
+<ul class="">
+<li><code><a title="stm8dce.asm_analysis.GlobalDef.__init__" href="#stm8dce.asm_analysis.GlobalDef.__init__">__init__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.GlobalDef.__repr__" href="#stm8dce.asm_analysis.GlobalDef.__repr__">__repr__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.GlobalDef.__str__" href="#stm8dce.asm_analysis.GlobalDef.__str__">__str__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.GlobalDef.print" href="#stm8dce.asm_analysis.GlobalDef.print">print</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="stm8dce.asm_analysis.IntDef" href="#stm8dce.asm_analysis.IntDef">IntDef</a></code></h4>
+<ul class="">
+<li><code><a title="stm8dce.asm_analysis.IntDef.__init__" href="#stm8dce.asm_analysis.IntDef.__init__">__init__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.IntDef.__repr__" href="#stm8dce.asm_analysis.IntDef.__repr__">__repr__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.IntDef.__str__" href="#stm8dce.asm_analysis.IntDef.__str__">__str__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.IntDef.print" href="#stm8dce.asm_analysis.IntDef.print">print</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

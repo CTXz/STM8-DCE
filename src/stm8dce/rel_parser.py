@@ -87,3 +87,20 @@ class RELParser:
                         f"Line {match.line_number}: Referenced symbol: {match.name}"
                     )
                     self.modules[-1].add_referenced_symbol(match)
+
+
+# Include private members in documentation
+__pdoc__ = {
+    name: True
+    for name, _class in globals().items()
+    if name.startswith("_") and isinstance(_class, type)
+}
+__pdoc__.update(
+    {
+        f"{name}.{member}": True
+        for name, _class in globals().items()
+        if isinstance(_class, type)
+        for member in _class.__dict__.keys()
+        if member not in {"__module__", "__dict__", "__weakref__", "__doc__"}
+    }
+)

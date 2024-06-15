@@ -478,3 +478,20 @@ def interrupt_handlers(functions):
         list: List of interrupt handler Function objects.
     """
     return [function for function in functions if function.isr_def]
+
+
+# Include private members in documentation
+__pdoc__ = {
+    name: True
+    for name, _class in globals().items()
+    if name.startswith("_") and isinstance(_class, type)
+}
+__pdoc__.update(
+    {
+        f"{name}.{member}": True
+        for name, _class in globals().items()
+        if isinstance(_class, type)
+        for member in _class.__dict__.keys()
+        if member not in {"__module__", "__dict__", "__weakref__", "__doc__"}
+    }
+)
