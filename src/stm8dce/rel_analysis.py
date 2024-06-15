@@ -125,7 +125,7 @@ class Module:
                         f"Function {function.name} in {function.path}:{function.start_line} references external symbol {symbol.name} in {self.path}:{self.line}"
                     )
 
-        # If the module isn't referenced by any other, no need to check further
+        # If the module isn't referenced by any function, no need to check further
         if not self.referenced_by:
             return
 
