@@ -123,6 +123,7 @@ def main():
     # rel and lib Parsing
     # ==========================================
 
+    # Gather all modules from rel and lib files
     modules = []
     for input_file in args.input:
         if input_file.endswith(".rel") or input_file.endswith(".lib"):
