@@ -73,9 +73,7 @@ def main():
     # Arg Parsing
     # ==========================================
     parser = argparse.ArgumentParser(description="STM8 SDCC dead code elimination tool")
-    parser.add_argument(
-        "input", nargs="+", help="ASM, rel and lib files to process", type=str
-    )
+    parser.add_argument("input", nargs="+", help="ASM, rel and lib files", type=str)
     parser.add_argument(
         "-o",
         "--output",

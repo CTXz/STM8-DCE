@@ -6,7 +6,7 @@ This example demonstrates the STM8DCE tool on a simply blinky project targeting 
 - [Pre-requisites](#pre-requisites)
 - [Building](#building)
   - [Generating the Assembly Files](#generating-the-assembly-files)
-  - [Applying dead code elimination with STM8DCE](#applying-dead-code-elimination-with-stm8dce)
+  - [Applying Dead Code Elimination with STM8DCE](#applying-dead-code-elimination-with-stm8dce)
   - [Assembling the optimized assembly files to object files](#assembling-the-optimized-assembly-files-to-object-files)
   - [Linking the object files to an ELF file](#linking-the-object-files-to-an-elf-file)
   - [Generating an ihx file from the ELF file](#generating-an-ihx-file-from-the-elf-file)
@@ -71,20 +71,24 @@ main.asm        stm8s_awu.asm   stm8s_clk.asm   stm8s_flash.asm  stm8s_i2c.asm  
 stm8s_adc1.asm  stm8s_beep.asm  stm8s_exti.asm  stm8s_gpio.asm   stm8s_it.asm   stm8s_iwdg.asm  stm8s_spi.asm  stm8s_tim2.asm  stm8s_wwdg.asm
 ```
 
-### Applying dead code elimination with STM8DCE
+### Applying Dead Code Elimination with STM8DCE
 
-Now that we have the assembly files, we can apply the STM8DCE tool to eliminate dead code. We'll create a new directory to store the optimized assembly files:
+Now that we have the assembly files, we can apply the STM8DCE tool to eliminate dead code. First, we'll create a new directory to store the optimized assembly files:
 
 ```bash
 mkdir -p build/dce/
 ```
 
-Now we can run the STM8DCE tool on the assembly files. We'll use the `-v` flag to enable verbose output, which neatly shows which functions and constants were eliminated:
+Next, we can run the STM8DCE tool on the assembly files. We'll use the `-v` flag to enable verbose output, which neatly shows which functions and constants were eliminated. Additionally, we will provide the path to the standard library, since some SPL modules may reference it:
+
 ```bash
-stm8dce -v -o build/dce build/asm/*.asm
+stm8dce -v -o build/dce build/asm/*.asm /path/to/stm8.lib
 ```
 
+> **Note:** The standard library can typically be found in the `lib` directory of the SDCC installation. On Linux systems, it is usually located at `/usr/share/sdcc/lib/stm8/stm8.lib` or `/usr/local/share/sdcc/lib/stm8/stm8.lib`. Including the standard library is important to ensure that STM8DCE does not eliminate any code that may be expected by the standard library (e.g., `putchar`, `getchar`, etc.). Omitting the standard library here may lead to linker errors, as the tool might remove essential functions used by the standard library.
+
 Here is a truncated output for brevity:
+
 ```
 Removing Functions:
         _TIM1_DeInit - build/dce/stm8s_tim1.asm:127

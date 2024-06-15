@@ -10,6 +10,7 @@
 - [Usage](#usage)
   - [Examples](#examples)
     - [DCE without Interrupt Optimization](#dce-without-interrupt-optimization)
+    - [Adding .rel and .lib Files](#adding-rel-and-lib-files)
     - [DCE with Interrupt Optimization](#dce-with-interrupt-optimization)
     - [Alternative Entry Label](#alternative-entry-label)
     - [Exclude Functions and Constants](#exclude-functions-and-constants)
@@ -61,9 +62,9 @@ usage: stm8dce [-h] -o OUTPUT [-e ENTRY] [-xf EXCLUDE_FUNCTION [EXCLUDE_FUNCTION
 STM8 SDCC dead code elimination tool
 
 positional arguments:
-  input                 ASM files to process
+  input                 ASM, rel and lib files
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -o OUTPUT, --output OUTPUT
                         Output directory to store processed ASM files
@@ -78,10 +79,12 @@ optional arguments:
   --version             show program's version number and exit
   --opt-irq             Remove unused IRQ handlers (Caution: Removes iret's for unused interrupts!)
 
-Example: stm8dce file1.asm file2.asm ... -o output/
+Example: stm8dce file1.asm file2.asm file3.rel file4.lib ... -o output/
 ```
 
-The tool receives a list of SDCC generated assembly files for the STM8 as input and outputs the optimized assembly files to the specified output directory. The tool will remove all unused functions and constants. Additionally the `--opt-irq` flag may be provided to also eliminate unused interrupt handlers.
+The tool receives a list of SDCC generated assembly-, lib- and rel files for the STM8 as input and outputs the optimized assembly files to the specified output directory.
+
+The `.lib` and `.rel` files aren't processed, but are necessary for stm8dce to ensure that functions used by these files aren't accidentally removed (See ["Adding .rel and .lib Files"](#adding-rel-and-lib-files)). Additionally the `--opt-irq` flag may be provided to also eliminate unused interrupt handlers.
 
 > Note: Optimizing away interrupt handlers will strip away their default behaivour of returning from the interrupt. This means, if a unused interrupt handler is accidentally triggered, the STM8 will likely crash. Use this feature with caution and ensure that only handled interrupts are enabled in your firmware!
 
@@ -106,6 +109,29 @@ $ stm8dce -o output main.asm stm8s_it.asm stm8s_gpio.asm
 ``` 
 
 This will output the optimized assembly files to the `output` directory.
+
+#### Adding .rel and .lib Files
+
+When using precompiled libraries or object files in your project, these files may reference functions defined in your project's assembly files. In such cases, you should provide these `.rel` and `.lib` files to the tool. While the tool does not process these files, it ensures that functions used by them are not mistakenly removed.
+
+For example, if your code uses the `printf` function from the standard library, you must provide the standard library to the tool. Otherwise, it might remove the `putchar` function, which is required by `printf`, leading to a linker error:
+
+```
+?ASlink-Warning-Undefined Global '_putchar' referenced by module 'puts'
+```
+
+To prevent this, include the standard library when running the tool:
+```bash
+mkdir output
+stm8dce -o output main.asm stm8s_it.asm stm8s_gpio.asm path/to/stm8.lib
+```
+
+Typically, the standard library is located in the `lib` directory of your SDCC installation. On Linux systems, this is usually found at `/usr/share/sdcc/lib/stm8/stm8.lib` or `/usr/local/share/sdcc/lib/stm8/stm8.lib`.
+
+Similarly, you can provide `.rel` files to the tool:
+```bash
+stm8dce -o output main.asm stm8s_it.asm some.rel some_other.rel
+```
 
 #### DCE with Interrupt Optimization
 
