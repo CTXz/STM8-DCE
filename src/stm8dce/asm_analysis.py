@@ -33,13 +33,13 @@ class GlobalDef:
     Attributes:
         path (str): Path of the file the global is defined in.
         name (str): Name of the global.
-        line (int): Line number of the global definition.
+        line_number (int): Line number of the global definition.
     """
 
-    def __init__(self, path, name, line):
+    def __init__(self, path, line_number, name):
         self.path = path
+        self.line_number = line_number
         self.name = name
-        self.line = line
 
     def __str__(self):
         return self.name
@@ -51,7 +51,7 @@ class GlobalDef:
         """Prints the details of the global definition."""
         print(f"Global: {self.name}")
         print(f"File: {self.path}")
-        print(f"Line: {self.line}")
+        print(f"Line: {self.line_number}")
 
 
 class IntDef:
@@ -62,13 +62,13 @@ class IntDef:
     Attributes:
         path (str): Path of the file the interrupt is defined in.
         name (str): Name of the interrupt.
-        line (int): Line number of the interrupt definition.
+        line_number (int): Line number of the interrupt definition.
     """
 
-    def __init__(self, path, name, line):
+    def __init__(self, path, line_number, name):
         self.path = path
+        self.line_number = line_number
         self.name = name
-        self.line = line
 
     def __str__(self):
         return self.name
@@ -80,7 +80,7 @@ class IntDef:
         """Prints the details of the interrupt definition."""
         print(f"Interrupt: {self.name}")
         print(f"File: {self.path}")
-        print(f"Line: {self.line}")
+        print(f"Line: {self.line_number}")
 
 
 class Function:
@@ -90,8 +90,8 @@ class Function:
     Input Attributes:
         path (str): Path of the file the function is defined in.
         name (str): Name of the function.
-        start_line (int): Start line of the function.
-        end_line (int): End line of the function.
+        start_line_number (int): Start line of the function.
+        end_line_number (int): End line of the function.
         calls_str (list): List of calls made by the function.
         long_read_labels_str (list): List of long read labels.
 
@@ -107,11 +107,11 @@ class Function:
     to resolve the generated attributes.
     """
 
-    def __init__(self, path, name, start_line):
+    def __init__(self, path, start_line_number, name):
         self.path = path
+        self.start_line_number = start_line_number
         self.name = name
-        self.start_line = start_line
-        self.end_line = None
+        self.end_line_number = None
         self.calls_str = []
         self.long_read_labels_str = []
 
@@ -134,8 +134,8 @@ class Function:
         """Prints the details of the function."""
         print(f"Function: {self.name}")
         print(f"File: {self.path}")
-        print(f"Start line: {self.start_line}")
-        print(f"End line: {self.end_line}")
+        print(f"Start line: {self.start_line_number}")
+        print(f"End line: {self.end_line_number}")
         print(f"Calls: {self.calls_str}")
         print(f"Long read labels: {self.long_read_labels_str}")
         print(f"Resolved calls: {[call.name for call in self.calls]}")
@@ -160,7 +160,7 @@ class Function:
             if global_def.name == self.name:
                 self.global_defs.append(global_def)
                 debug.pdbg(
-                    f"Global in {global_def.path}:{global_def.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                    f"Global in {global_def.path}:{global_def.line_number} matched to function {self.name} in {self.path}:{self.start_line_number}"
                 )
 
     def resolve_isr(self, interrupts):
@@ -174,7 +174,7 @@ class Function:
             if interrupt.name == self.name:
                 self.isr_def = interrupt
                 debug.pdbg(
-                    f"Interrupt {interrupt.path}:{interrupt.line} matched to function {self.name} in {self.path}:{self.start_line}"
+                    f"Interrupt {interrupt.path}:{interrupt.line_number} matched to function {self.name} in {self.path}:{self.start_line_number}"
                 )
 
     def resolve_calls(self, functions):
@@ -193,7 +193,7 @@ class Function:
             if not funcs:
                 self.external_calls.append(call_str)
                 debug.pdbg(
-                    f"Function {self.name} in {self.path}:{self.start_line} calls external function {call_str}"
+                    f"Function {self.name} in {self.path}:{self.start_line_number} calls external function {call_str}"
                 )
                 continue
 
@@ -205,11 +205,11 @@ class Function:
                         f"Error: Conflicting definitions for non-static function: {call_str}"
                     )
                     for func in funcs:
-                        print(f"In file {func.path}:{func.start_line}")
+                        print(f"In file {func.path}:{func.start_line_number}")
                     exit(1)
                 self.calls.append(funcs[0])
                 debug.pdbg(
-                    f"Function {self.name} in {self.path}:{self.start_line} calls function {funcs[0].name} in {funcs[0].path}:{funcs[0].start_line}"
+                    f"Function {self.name} in {self.path}:{self.start_line_number} calls function {funcs[0].name} in {funcs[0].path}:{funcs[0].start_line_number}"
                 )
             else:
                 matched = False
@@ -222,7 +222,7 @@ class Function:
                             exit(1)
                         self.calls.append(func)
                         debug.pdbg(
-                            f"Function {self.name} in {self.path}:{self.start_line} calls static function {func.name} in {func.path}:{func.start_line}"
+                            f"Function {self.name} in {self.path}:{self.start_line_number} calls static function {func.name} in {func.path}:{func.start_line_number}"
                         )
                         matched = True
 
@@ -238,7 +238,7 @@ class Function:
                 if func.name == long_read_label:
                     self.fptrs.append(func)
                     debug.pdbg(
-                        f"Function {self.name} in {self.path}:{self.start_line} assigns function pointer to {func.name} in {func.path}:{func.start_line}"
+                        f"Function {self.name} in {self.path}:{self.start_line_number} assigns function pointer to {func.name} in {func.path}:{func.start_line_number}"
                     )
 
     def resolve_constants(self, constants):
@@ -254,7 +254,7 @@ class Function:
             if not consts:
                 self.external_constants.append(long_read_label)
                 debug.pdbg(
-                    f"Function {self.name} in {self.path}:{self.start_line} reads external constant {long_read_label}"
+                    f"Function {self.name} in {self.path}:{self.start_line_number} reads external constant {long_read_label}"
                 )
                 continue
 
@@ -266,18 +266,18 @@ class Function:
                         f"Error: Conflicting definitions for global constant: {long_read_label}"
                     )
                     for const in consts:
-                        print(f"In file {const.path}:{const.start_line}")
+                        print(f"In file {const.path}:{const.start_line_number}")
                     exit(1)
                 self.constants.append(consts[0])
                 debug.pdbg(
-                    f"Function {self.name} in {self.path}:{self.start_line} reads global constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
+                    f"Function {self.name} in {self.path}:{self.start_line_number} reads global constant {long_read_label} in {consts[0].path}:{consts[0].start_line_number}"
                 )
             else:
                 for const in consts:
                     if const.path == self.path:
                         self.constants.append(const)
                         debug.pdbg(
-                            f"Function {self.name} in {self.path}:{self.start_line} reads local constant {long_read_label} in {consts[0].path}:{consts[0].start_line}"
+                            f"Function {self.name} in {self.path}:{self.start_line_number} reads local constant {long_read_label} in {consts[0].path}:{consts[0].start_line_number}"
                         )
 
 
@@ -288,8 +288,8 @@ class Constant:
     Input Attributes:
         path (str): Path of the file the constant is defined in.
         name (str): Name of the constant.
-        start_line (int): Start line of the constant.
-        end_line (int): End line of the constant.
+        start_line_number (int): Start line of the constant.
+        end_line_number (int): End line of the constant.
 
     Generated Attributes:
         global_defs (list): List of resolved global definitions associated with the constant (See resolve_globals).
@@ -297,11 +297,11 @@ class Constant:
     The intended use of this class is to first parse the input attributes and then call the resolve_* functions
     """
 
-    def __init__(self, path, name, start_line):
+    def __init__(self, path, start_line_number, name):
         self.path = path
+        self.start_line_number = start_line_number
         self.name = name
-        self.start_line = start_line
-        self.end_line = None
+        self.end_line_number = None
         self.global_defs = []
 
     def __str__(self):
@@ -314,8 +314,8 @@ class Constant:
         """Prints the details of the constant."""
         print(f"Constant: {self.name}")
         print(f"File: {self.path}")
-        print(f"Start line: {self.start_line}")
-        print(f"End line: {self.end_line}")
+        print(f"Start line: {self.start_line_number}")
+        print(f"End line: {self.end_line_number}")
         print(
             f"Resolved global definitions: {[glob.name for glob in self.global_defs]}"
         )
@@ -331,7 +331,7 @@ class Constant:
             if global_def.name == self.name:
                 self.global_defs.append(global_def)
                 debug.pdbg(
-                    f"Global in {global_def.path}:{global_def.line} matched to constant {self.name} in {self.path}:{self.start_line}"
+                    f"Global in {global_def.path}:{global_def.line_number} matched to constant {self.name} in {self.path}:{self.start_line_number}"
                 )
 
 
@@ -375,7 +375,7 @@ def function_by_filename_name(functions, filename, name):
         if f_filename == filename and function.name == name:
             if ret:
                 print(f"Error: Multiple definitions for function: {name}")
-                print(f"In file {function.path}:{function.start_line}")
+                print(f"In file {function.path}:{function.start_line_number}")
                 exit(1)
             ret = function
     return ret
@@ -435,7 +435,7 @@ def constant_by_filename_name(constants, filename, name):
         if c_filename == filename and constant.name == name:
             if ret:
                 print(f"Error: Multiple definitions for constant: {name}")
-                print(f"In file {constant.path}:{constant.start_line}")
+                print(f"In file {constant.path}:{constant.start_line_number}")
                 exit(1)
             ret = constant
     return ret
@@ -452,7 +452,7 @@ def traverse_calls(functions, top):
     Returns:
         list: List of all traversed Function objects.
     """
-    debug.pdbg(f"Traversing in {top.name} in {top.path}:{top.start_line}")
+    debug.pdbg(f"Traversing in {top.name} in {top.path}:{top.start_line_number}")
 
     ret = []
 
@@ -462,7 +462,7 @@ def traverse_calls(functions, top):
 
         ret += [call] + traverse_calls(functions, call)
 
-    debug.pdbg(f"Traversing out {top.name} in {top.path}:{top.start_line}")
+    debug.pdbg(f"Traversing out {top.name} in {top.path}:{top.start_line_number}")
 
     return ret
 

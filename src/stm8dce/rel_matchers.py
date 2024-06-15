@@ -23,104 +23,119 @@ from enum import Enum
 import re
 
 ############################################
-# Enums
-############################################
-
-
-class SymbolType(Enum):
-    """
-    Enum to represent the type of a symbol.
-    DEF: Defined symbol
-    REF: Referenced symbol
-    """
-
-    DEF = "Def"
-    REF = "Ref"
-
-
-############################################
 # Classes
 ############################################
 
 
-class Symbol:
+class SymbolLine:
     """
-    Class to represent a symbol in a .rel or .lib file.
+    Class to represent a symbol line in a .rel or .lib file.
     """
 
-    def __init__(self, name, type_, offset):
+    class Type(Enum):
         """
-        Initializes a Symbol object.
+        Enum to represent the type of a symbol line.
+        """
+
+        DEF = "Def"
+        REF = "Ref"
+
+    def __init__(self, file_path, line_number, line):
+        """
+        Initializes a SymbolLine object.
 
         Args:
-            name (str): The name of the symbol.
-            type_ (str): The type of the symbol (DEF or REF).
-            offset (int): The offset of the symbol.
+            file_path (str): The path to the file containing the symbol line.
+            line_number (int): The line number of the symbol line.
+            line (str): The line containing the symbol line.
         """
-        self.name = name
-        self.type = SymbolType(type_)
-        self.offset = offset
+
+        match = re.match(r"S (\S+) (Def|Ref)([0-9A-Fa-f]+)", line)
+        if match:
+            self.name = match.group(1)
+            self.type_ = SymbolLine.Type(match.group(2))
+            self.offset = int(match.group(3), 16)
+        else:
+            raise ValueError(f"Not a symbol line: {line}")
+
+        self.file_path = file_path
+        self.line_number = line_number
+        self.line = line
 
 
-############################################
-# Matchers
-############################################
-
-
-def is_header_line(line):
+class HeaderLine:
     """
-    Checks if a line is a header line in a .rel or .lib file.
+    Class to represent a header line in a .rel or .lib file.
+    """
 
-    Citeria for a header line:
-        - Starts with "H "
+    def __init__(self, file_path, line_number, line):
+        """
+        Initializes a HeaderLine object.
+
+        Args:
+            file_path (str): The path to the file containing the header line.
+            line_number (int): The line number of the header line.
+            line (str): The line containing the header line.
+        """
+        if not line.startswith("H "):
+            raise ValueError(f"Not a header line: {line}")
+
+        self.file_path = file_path
+        self.line_number = line_number
+        self.line = line
+
+        # This class is only used to identify header lines
+        # Further matching can be done here but is currently not needed
+
+
+class ModuleLine:
+    """
+    Class to represent a module line in a .rel or .lib file.
+    """
+
+    def __init__(self, file_path, line_number, line):
+        """
+        Initializes a ModuleLine object.
+
+        Args:
+            file_path (str): The path to the file containing the module line.
+            line_number (int): The line number of the module line.
+            line (str): The line containing the module line.
+        """
+        if not line.startswith("M "):
+            raise ValueError(f"Not a module line: {line}")
+
+        self.name = line.split()[1]
+        self.file_path = file_path
+        self.line_number = line_number
+        self.line = line
+
+
+def match_rel_line(file_path, line_number, line):
+    """
+    Matches a line from a .rel or .lib file to a SymbolLine, HeaderLine, or ModuleLine.
 
     Args:
-        line (str): The line to check.
+        file_path (str): The path to the file containing the line.
+        line_number (int): The line number of the line.
+        line (str): The line to be matched.
 
     Returns:
-        bool: True if the line is a header line, False otherwise.
+        SymbolLine, HeaderLine, or ModuleLine: The matched object, or None if no match is found.
     """
-    return line.startswith("H ")
+    try:
+        return SymbolLine(file_path, line_number, line)
+    except ValueError:
+        pass
 
+    try:
+        return HeaderLine(file_path, line_number, line)
+    except ValueError:
+        pass
 
-def is_module_line(line):
-    """
-    Checks if a line is a module line in a .rel or .lib file.
+    try:
+        return ModuleLine(file_path, line_number, line)
+    except ValueError:
+        pass
 
-    Criteria for a module line:
-        - Starts with "M "
-
-    Args:
-        line (str): The line to check.
-
-    Returns:
-        str: The module name if the line is a module line, None otherwise.
-    """
-    if line.startswith("M "):
-        return line.split()[1]
-    return None
-
-
-def is_symbol_line(line):
-    """
-    Checks if a line is a symbol line in a .rel or .lib file.
-
-    Criteria for a symbol line:
-        - Starts with "S "
-        - Followed by a symbol name
-        - Followed by a "Def" or "Ref" with a hexadecimal offset
-
-    Args:
-        line (str): The line to check.
-
-    Returns:
-        Symbol: A Symbol object if the line is a symbol line, None otherwise.
-    """
-    match = re.match(r"S (\S+) (Def|Ref)([0-9A-Fa-f]+)", line)
-    if match:
-        return Symbol(
-            name=match.group(1),
-            type_=match.group(2),
-            offset=int(match.group(3), 16),
-        )
-    return None
+    return

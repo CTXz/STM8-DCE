@@ -28,12 +28,13 @@ import os
 import argparse
 import shutil
 
-from . import asm_parsers
-from . import rel_parsers
 from . import debug
 from . import asm_analysis
 from . import settings
+
 from .__init__ import __version__
+from .asm_parser import ASMParser
+from .rel_parser import RELParser
 
 ############################################
 # Arg Parsing
@@ -123,9 +124,11 @@ def main():
 
     # Gather all modules from rel and lib files
     modules = []
+
     for input_file in args.input:
         if input_file.endswith(".rel") or input_file.endswith(".lib"):
-            modules += rel_parsers.parse_file(input_file)
+            relparser = RELParser(input_file)
+            modules += relparser.modules
 
     # ==========================================
     # ASM Parsing
@@ -144,15 +147,18 @@ def main():
     interrupts = []
     functions = []
     constants = []
+
     for output_file in os.listdir(args.output):
         if output_file.endswith(".asm"):
-            g_defs, i_defs, c_defs, f_defs = asm_parsers.parse_file(
-                args.output + "/" + output_file
-            )
-            globals += g_defs
-            interrupts += i_defs
-            constants += c_defs
-            functions += f_defs
+            # g_defs, i_defs, c_defs, f_defs = asm_parsers.parse_file(
+            #     args.output + "/" + output_file
+            # )
+            asmparser = ASMParser(args.output + "/" + output_file)
+
+            globals += asmparser.globals
+            interrupts += asmparser.interrupts
+            constants += asmparser.constants
+            functions += asmparser.functions
 
     # ==========================================
     # Reference Resolution
@@ -228,7 +234,7 @@ def main():
     elif len(entry_function) > 1:
         print(f"Error: Multiple definitions for entry label: {args.entry}")
         for entry_func in entry_function:
-            print(f"In file {entry_func.path}:{entry_func.start_line}")
+            print(f"In file {entry_func.path}:{entry_func.start_line_number}")
         exit(1)
 
     entry_function = entry_function[0]
@@ -283,7 +289,7 @@ def main():
                         f"Error: Multiple possible definitions for excluded function: {name}"
                     )
                     for ex_func in excluded_function:
-                        print(f"In file {ex_func.path}:{ex_func.start_line}")
+                        print(f"In file {ex_func.path}:{ex_func.start_line_number}")
                     print(
                         "Please use the format file.asm:label to specify the exact function to exclude"
                     )
@@ -340,7 +346,7 @@ def main():
                         f"Error: Multiple possible definitions for excluded constant: {name}"
                     )
                     for exc_const in excluded_constant:
-                        print(f"In file {exc_const.path}:{exc_const.start_line}")
+                        print(f"In file {exc_const.path}:{exc_const.start_line_number}")
                     print(
                         "Please use the format file.asm:label to specify the exact constant to exclude"
                     )
@@ -384,13 +390,13 @@ def main():
         print("Removing Functions:")
         for removed_function in remove_functions:
             print(
-                f"\t{removed_function.name} - {removed_function.path}:{removed_function.start_line}"
+                f"\t{removed_function.name} - {removed_function.path}:{removed_function.start_line_number}"
             )
         print()
         print("Removing Constants:")
         for removed_constant in remove_constants:
             print(
-                f"\t{removed_constant.name} - {removed_constant.path}:{removed_constant.start_line}"
+                f"\t{removed_constant.name} - {removed_constant.path}:{removed_constant.start_line_number}"
             )
         print()
 
@@ -430,7 +436,9 @@ def main():
         # Global definitions
         if file_path in file_globals:
             for global_def in file_globals[file_path]:
-                lines[global_def.line - 1] = ";" + lines[global_def.line - 1]
+                lines[global_def.line_number - 1] = (
+                    ";" + lines[global_def.line_number - 1]
+                )
             file_globals[file_path].remove(global_def)
 
         # Interrupt definitions
@@ -439,24 +447,24 @@ def main():
         # entry!
         if file_path in file_interrupts:
             for interrupt_def in file_interrupts[file_path]:
-                lines[interrupt_def.line - 1] = "    int 0x000000\n"
+                lines[interrupt_def.line_number - 1] = "    int 0x000000\n"
             file_interrupts[file_path].remove(interrupt_def)
 
         # Functions
         if file_path in file_functions:
             for function_def in file_functions[file_path]:
-                for func_line in range(
-                    function_def.start_line - 1, function_def.end_line
+                for line_number in range(
+                    function_def.start_line_number - 1, function_def.end_line_number
                 ):
-                    lines[func_line] = ";" + lines[func_line]
+                    lines[line_number] = ";" + lines[line_number]
 
         # Constants
         if file_path in file_constants:
             for constant_def in file_constants[file_path]:
-                for const_line in range(
-                    constant_def.start_line - 1, constant_def.end_line
+                for line_number in range(
+                    constant_def.start_line_number - 1, constant_def.end_line_number
                 ):
-                    lines[const_line] = ";" + lines[const_line]
+                    lines[line_number] = ";" + lines[line_number]
 
         with open(file_path, "w") as file:
             file.writelines(lines)
@@ -470,7 +478,7 @@ def main():
             lines = file.readlines()
 
         for global_def in file_globals[file_path]:
-            lines[global_def.line - 1] = ";" + lines[global_def.line - 1]
+            lines[global_def.line_number - 1] = ";" + lines[global_def.line_number - 1]
 
         with open(file_path, "w") as file:
             file.writelines(lines)
@@ -482,7 +490,7 @@ def main():
             lines = file.readlines()
 
         for interrupt_def in file_interrupts[file_path]:
-            lines[interrupt_def.line - 1] = "    int 0x000000\n"
+            lines[interrupt_def.line_number - 1] = "    int 0x000000\n"
 
         with open(file_path, "w") as file:
             file.writelines(lines)
@@ -493,8 +501,10 @@ def main():
             lines = file.readlines()
 
         for constant_def in file_constants[file_path]:
-            for const_line in range(constant_def.start_line - 1, constant_def.end_line):
-                lines[const_line] = ";" + lines[const_line]
+            for line_number in range(
+                constant_def.start_line_number - 1, constant_def.end_line_number
+            ):
+                lines[line_number] = ";" + lines[line_number]
 
         with open(file_path, "w") as file:
             file.writelines(lines)

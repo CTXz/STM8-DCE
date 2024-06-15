@@ -28,7 +28,7 @@ class Module:
 
     Attributes:
         path (str): Path to the file containing the module.
-        line (int): Line number in the file where the module starts.
+        line_number (int): Line number in the file where the module starts.
         name (str): The name of the module.
         referenced_symbols (list): Symbols referenced by this module.
         defined_symbols (list): Symbols defined by this module.
@@ -36,16 +36,16 @@ class Module:
         references (list): ASM Functions or constants referenced by this module.
     """
 
-    def __init__(self, path, line):
+    def __init__(self, path, line_number):
         """
-        Initializes the Module with the given path and line.
+        Initializes the Module with the given path and line_number.
 
         Args:
             path (str): The file path of the module.
-            line (int): The line number in the file.
+            line_number (int): The line number in the file.
         """
         self.path = path
-        self.line = line
+        self.line_number = line_number
         self.name = "UNNAMED MODULE"  # Some modules don't have a name
         self.referenced_symbols = []
         self.defined_symbols = []
@@ -122,7 +122,7 @@ class Module:
                 for function in match:
                     self.referenced_by.append(self)
                     debug.pdbg(
-                        f"Function {function.name} in {function.path}:{function.start_line} references external symbol {symbol.name} in {self.path}:{self.line}"
+                        f"Function {function.name} in {function.path}:{function.start_line_number} references external symbol {symbol.name} in {self.path}:{self.line_number}"
                     )
 
         # If the module isn't referenced by any function, no need to check further
@@ -135,13 +135,13 @@ class Module:
                 if symbol.name == function.name:
                     self.references.append(function)
                     debug.pdbg(
-                        f"Module {self.name} in {self.path}:{self.line} references Function {function.name} in {function.path}:{function.start_line}"
+                        f"Module {self.name} in {self.path}:{self.line_number} references Function {function.name} in {function.path}:{function.start_line_number}"
                     )
                     break
             for constant in constants:
                 if symbol.name == constant.name:
                     self.references.append(constant)
                     debug.pdbg(
-                        f"Module {self.name} in {self.path}:{self.line} references Constant {constant.name} in {constant.path}:{constant.start_line}"
+                        f"Module {self.name} in {self.path}:{self.line_number} references Constant {constant.name} in {constant.path}:{constant.start_line_number}"
                     )
                     break
