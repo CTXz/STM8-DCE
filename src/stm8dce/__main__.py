@@ -218,10 +218,6 @@ def main():
     for function in functions:
         function.resolve_constants(constants)
 
-    # Resolve external references
-    for module in modules:
-        module.resolve_references(functions, constants)
-
     # ==========================================
     # Dead Code Evaluation
     # ==========================================
@@ -309,6 +305,13 @@ def main():
                     functions, excluded_function
                 )
 
+    # Remove duplicates
+    keep_functions = list(set(keep_functions))
+
+    # Resolve external references
+    for module in modules:
+        module.resolve_references(keep_functions, functions, constants)
+
     # Keep functions that are referenced by lib and rel files
     for module in modules:
         for function in module.references:
@@ -323,7 +326,7 @@ def main():
                     functions, function
                 )
 
-    # Remove duplicates
+    # Once again, remove possible duplicates
     keep_functions = list(set(keep_functions))
 
     # Keep constants loaded by kept functions

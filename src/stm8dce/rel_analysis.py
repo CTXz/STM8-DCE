@@ -103,7 +103,7 @@ class Module:
         """
         self.defined_symbols.append(symbol)
 
-    def resolve_references(self, functions, constants):
+    def resolve_references(self, keep_functions, all_functions, all_constants):
         """
         Resolves references for the module.
         Resolving means:
@@ -114,9 +114,11 @@ class Module:
             functions (list): List of all function objects.
             constants (list): List of all constant objects.
         """
-        # Resolve functions that reference this module's defined symbols
+        # Resolve kept functions that reference this module's defined symbols
         for symbol in self.defined_symbols:
-            match = asm_analysis.functions_referencing_external(functions, symbol.name)
+            match = asm_analysis.functions_referencing_external(
+                keep_functions, symbol.name
+            )
             if match:
                 self.referenced_by.extend(match)
                 for function in match:
@@ -131,14 +133,14 @@ class Module:
 
         # Resolve functions and constants that this module references
         for symbol in self.referenced_symbols:
-            for function in functions:
+            for function in all_functions:
                 if symbol.name == function.name:
                     self.references.append(function)
                     debug.pdbg(
                         f"Module {self.name} in {self.path}:{self.line_number} references Function {function.name} in {function.path}:{function.start_line_number}"
                     )
                     break
-            for constant in constants:
+            for constant in all_constants:
                 if symbol.name == constant.name:
                     self.references.append(constant)
                     debug.pdbg(
