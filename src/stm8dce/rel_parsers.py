@@ -82,8 +82,8 @@ def parse(file_iterator):
             )
 
             # Header is the 2nd line in the module
-            line = file_iterator.index - 1
-            modules.append(rel_analysis.Module(file_iterator.path, line))
+            start_line = file_iterator.index - 1
+            modules.append(rel_analysis.Module(file_iterator.path, start_line))
 
         module_match = rel_matchers.is_module_line(line)
         if module_match:
