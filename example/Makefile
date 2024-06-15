@@ -13,6 +13,9 @@ DCE = stm8dce
 MKDIR = mkdir
 CP = cp
 
+# Find the standard library path dynamically
+STDLIB_PATH := $(shell dirname $(shell which sdcc))/../share/sdcc/lib/stm8/stm8.lib
+
 #######################################
 # Build options
 #######################################
@@ -53,9 +56,11 @@ OBJ_DIR = $(BUILD_DIR)/obj
 VPATH += src
 SRC_FILES = $(wildcard src/*.c) # Compile all .c files in src directory
 
+# Libraries
+LIBS = $(STDLIB_PATH)
+
 # Linker flags
 LD_FLAGS = -mstm8 --out-fmt-elf --opt-code-size
-LIBS = $(addprefix -l, stm8)
 
 # ELF to HEX flags
 OBJCOPY_FLAGS = --remove-section=".debug*" --remove-section=SSEG --remove-section=INITIALIZED --remove-section=DATA
@@ -137,7 +142,7 @@ $(BUILD_DIR)/$(PROJECT).ihx: $(BUILD_DIR)/$(PROJECT).elf
 # ELF file
 $(BUILD_DIR)/$(PROJECT).elf: $(OBJ)
 	@$(MKDIR) -p $(BUILD_DIR)
-	$(LD) $(LD_FLAGS) $(LIBS) -o $@ $^
+	$(LD) $(LD_FLAGS) -o $@ $(LIBS) $^
 
 $(ASM_DIR)/%.asm: %.c
 	@$(MKDIR) -p $(ASM_DIR)
@@ -145,7 +150,7 @@ $(ASM_DIR)/%.asm: %.c
 
 $(DCE_DIR)/%.asm: $(ASM)
 	@$(MKDIR) -p $(DCE_DIR)
-	$(DCE) $(DCE_FLAGS) -o $(DCE_DIR) $^
+	$(DCE) $(DCE_FLAGS) -o $(DCE_DIR) $(LIBS) $^
 
 $(OBJ_DIR)/%.rel: $(DCE_DIR)/%.asm
 	@$(MKDIR) -p $(OBJ_DIR)
