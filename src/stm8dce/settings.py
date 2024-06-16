@@ -20,3 +20,5 @@ This module contains global settings for the STM8DCE tool
 verbose = False
 debug = False
 opt_irq = False
+codeseg = "CODE"
+constseg = "CONST"

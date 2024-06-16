@@ -20,6 +20,7 @@ This module provides classes and functions to pattern match STM8 SDCC generated 
 import re
 from itertools import takewhile
 from enum import Enum
+from . import settings
 
 ############################################
 # Helper functions
@@ -53,8 +54,8 @@ class AreaType(Enum):
     Enum to represent relevant types of areas in assembly code.
     """
 
-    CODE = "CODE"
-    CONST = "CONST"
+    CODE = settings.codeseg
+    CONST = settings.constseg
     OTHER = None
 
 
@@ -88,20 +89,20 @@ class Directive:
         split = self.line.split(None, 1)
         self.value = split[1] if len(split) == 2 else None
 
-    def is_area(self, area_type=None):
+    def is_area(self, area_name=None):
         """
-        Checks if the directive is an area directive, optionally of a specific area type.
+        Checks if the directive is an area directive, optionally of a specific area.
 
         Args:
-            area_type (AreaType, optional): The area type to check for.
+            area_name (str, optional): The area to check for.
 
         Returns:
-            bool: True if the directive is an area directive (and matches the area type, if provided), False otherwise.
+            bool: True if the directive is an area directive (and matches the area, if provided), False otherwise.
         """
-        if not area_type:
+        if not area_name:
             return self.line.startswith(".area")
 
-        pattern = rf"\.area\s+{area_type.value}"
+        pattern = rf"\.area\s+{area_name}"
         return re.match(pattern, self.line)
 
     def is_global(self):
@@ -114,18 +115,18 @@ class Directive:
         return self.line.startswith(".globl")
 
     @staticmethod
-    def is_area_directive(eval, area_type=None):
+    def is_area_directive(eval, area_name=None):
         """
         Static method to check if an instance is a Directive and is an area directive.
 
         Args:
             eval: The instance to check.
-            area_type (AreaType, optional): The area type to check for.
+            area_name (str, optional): The area to check for.
 
         Returns:
-            bool: True if the instance is a Directive and is an area directive (and matches the area type, if provided), False otherwise.
+            bool: True if the instance is a Directive and is an area directive (and matches the area, if provided), False otherwise.
         """
-        return isinstance(eval, Directive) and eval.is_area(area_type)
+        return isinstance(eval, Directive) and eval.is_area(area_name)
 
     @staticmethod
     def is_global_directive(eval):

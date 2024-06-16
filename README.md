@@ -57,7 +57,8 @@ $ python3 -m pip install .
 ## Usage
 
 ```
-usage: stm8dce [-h] -o OUTPUT [-e ENTRY] [-xf EXCLUDE_FUNCTION [EXCLUDE_FUNCTION ...]] [-xc EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...]] [-v] [-d] [--version] [--opt-irq] input [input ...]
+usage: stm8dce [-h] -o OUTPUT [-e ENTRY] [-xf EXCLUDE_FUNCTION [EXCLUDE_FUNCTION ...]] [-xc EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...]] [--codeseg CODESEG] [--constseg CONSTSEG] [-v] [-d] [--version] [--opt-irq]
+               input [input ...]
 
 STM8 SDCC dead code elimination tool
 
@@ -74,6 +75,8 @@ options:
                         Exclude functions
   -xc EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...], --exclude-constant EXCLUDE_CONSTANT [EXCLUDE_CONSTANT ...]
                         Exclude interrupt handlers
+  --codeseg CODESEG     Code segment name (default: CODE)
+  --constseg CONSTSEG   Constant segment name (default: CONST)
   -v, --verbose         Verbose output
   -d, --debug           Debug output
   --version             show program's version number and exit

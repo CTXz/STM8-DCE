@@ -90,12 +90,12 @@ class ASMParser:
                 continue
 
             # Code section
-            if Directive.is_area_directive(eval, AreaType.CODE):
+            if Directive.is_area_directive(eval, settings.codeseg):
                 self._parse_code_section(eval)
                 continue
 
             # Constants section
-            if Directive.is_area_directive(eval, AreaType.CONST):
+            if Directive.is_area_directive(eval, settings.constseg):
                 self._parse_const_section(eval)
                 continue
 

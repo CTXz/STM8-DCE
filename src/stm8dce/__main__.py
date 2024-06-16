@@ -93,6 +93,15 @@ def main():
         type=str,
         nargs="+",
     )
+    parser.add_argument(
+        "--codeseg", help="Code segment name (default: CODE)", type=str, default="CODE"
+    )
+    parser.add_argument(
+        "--constseg",
+        help="Constant segment name (default: CONST)",
+        type=str,
+        default="CONST",
+    )
     parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
     parser.add_argument("-d", "--debug", help="Debug output", action="store_true")
     parser.add_argument(
@@ -113,6 +122,8 @@ def main():
     settings.verbose = args.verbose or args.debug
     settings.debug = args.debug
     settings.opt_irq = args.opt_irq
+    settings.codeseg = args.codeseg
+    settings.constseg = args.constseg
 
     # Check if output directory exists
     if not os.path.exists(args.output):
