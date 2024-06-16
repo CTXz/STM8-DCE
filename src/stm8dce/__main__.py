@@ -230,6 +230,7 @@ def main():
     # ==========================================
 
     keep_functions = []
+    keep_constants = []
 
     # Get entry function object
     entry_function = asm_analysis.functions_by_name(functions, args.entry)
@@ -350,24 +351,23 @@ def main():
     for module in modules:
         module.resolve_references(keep_functions, functions, constants)
 
-    # Keep functions that are referenced by lib and rel files
+    # Keep functions and constants that are referenced by lib and rel files
     for module in modules:
-        for function in module.references:
-            if function not in keep_functions:
+        for ref in module.references:
+            if isinstance(ref, asm_analysis.Function) and ref not in keep_functions:
                 debug.pdbg()
                 debug.pdbg(
-                    f"Traversing function {function.name} referenced by module {module.name}"
+                    f"Traversing function {ref.name} referenced by module {module.name}"
                 )
                 debug.pseperator()
-                keep_functions += [function] + asm_analysis.traverse_calls(
-                    functions, function
-                )
+                keep_functions += [ref] + asm_analysis.traverse_calls(functions, ref)
+            elif isinstance(ref, asm_analysis.Constant) and ref not in keep_constants:
+                keep_constants.append(ref)
 
     # Once again, remove possible duplicates
     keep_functions = list(set(keep_functions))
 
     # Keep constants loaded by kept functions
-    keep_constants = []
     for kept_function in keep_functions:
         keep_constants += kept_function.constants
 
