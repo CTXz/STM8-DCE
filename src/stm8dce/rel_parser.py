@@ -21,6 +21,10 @@ from . import rel_analysis
 from . import debug
 from .rel_matchers import *
 
+############################################
+# Classes
+############################################
+
 
 class RELParser:
     """
@@ -88,6 +92,10 @@ class RELParser:
                     )
                     self.modules[-1].add_referenced_symbol(match)
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {

@@ -22,6 +22,10 @@ from . import debug
 from . import asm_analysis
 from .asm_matchers import *
 
+############################################
+# Classes
+############################################
+
 
 class ASMParser:
     """
@@ -230,6 +234,10 @@ class ASMParser:
 
         self.constants.append(ret_constant)
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {

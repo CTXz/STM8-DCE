@@ -14,7 +14,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-This module provides functions to pattern match STM8 SDCC generated .rel and .lib files.
+This module provides classes and function to pattern match STM8 SDCC generated .rel and .lib files.
 For more information on the STM8 .rel and .lib file formats, see:
     https://sourceforge.net/p/sdcc/code/HEAD/tree/trunk/sdcc/sdas/doc/format.txt
 """
@@ -140,6 +140,10 @@ def match_rel_line(file_path, line_number, line):
 
     return
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {

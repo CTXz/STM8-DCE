@@ -89,15 +89,17 @@ class Function:
 
     Input Attributes:
         path (str): Path of the file the function is defined in.
-        name (str): Name of the function.
         start_line_number (int): Start line of the function.
+        name (str): Name of the function.
         end_line_number (int): End line of the function.
         calls_str (list): List of calls made by the function.
         long_read_labels_str (list): List of long read labels.
 
     Generated Attributes:
         calls (list): List of resolved functions called by the function (See resolve_calls).
+        external_calls (list): List of external functions (in rel & lib files) called by the function.
         constants (list): List of resolved constants read by the function (See resolve_constants).
+        external_constants (list): List of external constants (in rel & lib files) read by the function.
         global_defs (list): List of resolved global definitions used by the function (See resolve_globals).
         fptrs (list): List of resolved function pointers assigned by the function (See resolve_fptrs).
         isr_def (IntDef): Resolved interrupt definition associated with the function (See resolve_isr).
@@ -287,8 +289,8 @@ class Constant:
 
     Input Attributes:
         path (str): Path of the file the constant is defined in.
-        name (str): Name of the constant.
         start_line_number (int): Start line of the constant.
+        name (str): Name of the constant.
         end_line_number (int): End line of the constant.
 
     Generated Attributes:
@@ -479,6 +481,10 @@ def interrupt_handlers(functions):
     """
     return [function for function in functions if function.isr_def]
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {

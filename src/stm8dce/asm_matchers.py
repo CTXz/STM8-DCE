@@ -14,12 +14,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-This module provides functions to pattern match STM8 SDCC generated assembly code.
+This module provides classes and functions to pattern match STM8 SDCC generated assembly code.
 """
 
 import re
 from itertools import takewhile
 from enum import Enum
+
+############################################
+# Helper functions
+############################################
 
 
 # Function to sanitize lines by removing comments and stripping whitespace
@@ -39,14 +43,24 @@ def sanitize_line(line):
     return line.split(";")[0].strip()
 
 
+############################################
+# Enums
+############################################
+
+
 class AreaType(Enum):
     """
-    Enum to represent different types of areas in assembly code.
+    Enum to represent relevant types of areas in assembly code.
     """
 
     CODE = "CODE"
     CONST = "CONST"
     OTHER = None
+
+
+############################################
+# Classes
+############################################
 
 
 class Directive:
@@ -554,6 +568,10 @@ def match_asm_line(file_path, line_number, line):
 
     return ret
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {

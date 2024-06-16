@@ -21,6 +21,10 @@ from . import rel_matchers
 from . import asm_analysis
 from . import debug
 
+############################################
+# Classes
+############################################
+
 
 class Module:
     """
@@ -173,6 +177,11 @@ class Module:
         self.resolve_outgoing_references(all_functions, all_constants)
 
 
+############################################
+# Filtering & Search functions
+############################################
+
+
 def modules_by_defined_symbol(modules, symbol_name):
     """
     Returns a list of modules that define the given symbol.
@@ -190,6 +199,10 @@ def modules_by_defined_symbol(modules, symbol_name):
         if symbol_name in [symbol.name for symbol in module.defined_symbols]
     ]
 
+
+############################################
+# Documentation
+############################################
 
 # Include private members in documentation
 __pdoc__ = {
