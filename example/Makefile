@@ -47,7 +47,7 @@ AS_FLAGS = -plosg -ff
 
 # Dead Code Elimination
 DCE_DIR = $(BUILD_DIR)/dce
-DCE_FLAGS = --opt-irq
+DCE_FLAGS =
 
 # Object files
 OBJ_DIR = $(BUILD_DIR)/obj

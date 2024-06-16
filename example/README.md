@@ -91,26 +91,26 @@ Here is a truncated output for brevity:
 
 ```
 Removing Functions:
-        _TIM1_DeInit - build/dce/stm8s_tim1.asm:127
-        _TIM1_TimeBaseInit - build/dce/stm8s_tim1.asm:210
-        _TIM1_OC1Init - build/dce/stm8s_tim1.asm:266
-        _TIM1_OC2Init - build/dce/stm8s_tim1.asm:433
-        _TIM1_OC3Init - build/dce/stm8s_tim1.asm:600
-        _TIM1_OC4Init - build/dce/stm8s_tim1.asm:767
-        _TIM1_BDTRConfig - build/dce/stm8s_tim1.asm:882
-        _TIM1_ICInit - build/dce/stm8s_tim1.asm:978
+        _BEEP_DeInit - build/dce/stm8s_beep.asm:57
+        _BEEP_Init - build/dce/stm8s_beep.asm:66
+        _BEEP_Cmd - build/dce/stm8s_beep.asm:113
+        _BEEP_LSICalibrationConfig - build/dce/stm8s_beep.asm:137
+        _CLK_DeInit - build/dce/stm8s_clk.asm:78
+        _CLK_FastHaltWakeUpCmd - build/dce/stm8s_clk.asm:112
+        _CLK_HSECmd - build/dce/stm8s_clk.asm:147
+        _CLK_HSICmd - build/dce/stm8s_clk.asm:182
         ...
 
 Removing Constants:
-        ___str_0 - build/dce/stm8s_tim1.asm:3931
         ___str_0 - build/dce/stm8s_beep.asm:226
-        ___str_0 - build/dce/stm8s_flash.asm:1034
-        ___str_0 - build/dce/stm8s_tim2.asm:2090
-        ___str_0 - build/dce/stm8s_iwdg.asm:140
-        ___str_0 - build/dce/stm8s_exti.asm:352
-        ___str_0 - build/dce/stm8s_adc1.asm:1709
+        _HSIDivFactor - build/dce/stm8s_clk.asm:1337
+        _CLKPrescTable - build/dce/stm8s_clk.asm:1342
+        ___str_0 - build/dce/stm8s_clk.asm:1352
         _APR_Array - build/dce/stm8s_awu.asm:300
         _TBR_Array - build/dce/stm8s_awu.asm:318
+        ___str_0 - build/dce/stm8s_awu.asm:337
+        ___str_0 - build/dce/stm8s_tim2.asm:2090
+        ___str_0 - build/dce/stm8s_exti.asm:352
         ...
 
 Detected and removed:
@@ -187,21 +187,21 @@ If you're curious about the size of the binary, you can use `stm8-size` to check
 ```bash
 $ stm8-size build/blinky.ihx
    text    data     bss     dec     hex filename
-      0     487       0     487     1e7 blinky.ihx
+      0     507       0     507     1fb build/blinky.ihx
 ```
 
-Only 487 bytes of data are used! Just to put this into perspective, without DCE the binary size would be 20998 bytes:
+Only 507 bytes of data are used! Just to put this into perspective, without DCE the binary size would be 20998 bytes:
 ```bash
 $ stm8-size build/blinky.ihx
    text    data     bss     dec     hex filename
       0   20998       0   20998    5206 blinky.ihx
 ```
 
-That's a reduction of 20511 bytes!
+That's a reduction of 20491 bytes!
 
 ### Flashing the ihx file to the STM8S103
 
-Finally, we can flash the `example.ihx` file to the STM8S103 using `stm8flash`. In my case, I am using a ST-Link V2 programmer:
+Finally, we can flash the `blinky.ihx` file to the STM8S103 using `stm8flash`. In my case, I am using a ST-Link V2 programmer:
 
 ```bash
 stm8flash -c stlinkv2 -p stm8s103f3 -w build/blinky.ihx
