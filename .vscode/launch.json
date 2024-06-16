@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run stm8dce.__main__ with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "stm8dce.__main__",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": [
+                "--opt-irq",
+                "-d",
+                "-o",
+                "${workspaceFolder}/example/build/dce",
+                "/opt/stm8-toolchain/share/sdcc/lib/stm8/stm8.lib",
+                "${workspaceFolder}/example/build/asm/main.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_it.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_adc1.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_awu.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_beep.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_clk.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_exti.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_flash.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_gpio.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_i2c.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_itc.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_iwdg.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_rst.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_spi.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_tim1.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_tim2.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_uart1.asm",
+                "${workspaceFolder}/example/build/asm/stm8s_wwdg.asm"
+            ]
+        }
+    ]
+}
