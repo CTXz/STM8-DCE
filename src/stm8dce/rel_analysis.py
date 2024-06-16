@@ -103,18 +103,14 @@ class Module:
         """
         self.defined_symbols.append(symbol)
 
-    def resolve_references(self, keep_functions, all_functions, all_constants):
+    def resolve_incoming_references(self, keep_functions):
         """
-        Resolves references for the module.
-        Resolving means:
-            - Find the functions that reference this module's defined symbols
-            - Find the functions and constants that this module references
+        Resolves incoming references for the module.
+        This means finding the functions that reference this module's defined symbols.
 
         Args:
-            functions (list): List of all function objects.
-            constants (list): List of all constant objects.
+            keep_functions (list): List of kept function objects.
         """
-        # Resolve kept functions that reference this module's defined symbols
         for symbol in self.defined_symbols:
             match = asm_analysis.functions_referencing_external(
                 keep_functions, symbol.name
@@ -127,26 +123,72 @@ class Module:
                         f"Function {function.name} in {function.path}:{function.start_line_number} references external symbol {symbol.name} in {self.path}:{self.line_number}"
                     )
 
-        # If the module isn't referenced by any function, no need to check further
-        if not self.referenced_by:
-            return
+    def resolve_outgoing_references(self, all_functions, all_constants):
+        """
+        Resolves outgoing references for the module.
+        This means finding the functions and constants that this module references.
 
-        # Resolve functions and constants that this module references
+        Args:
+            all_functions (list): List of all function objects.
+            all_constants (list): List of all constant objects.
+        """
         for symbol in self.referenced_symbols:
             for function in all_functions:
                 if symbol.name == function.name:
-                    self.references.append(function)
+                    if function not in self.references:
+                        self.references.append(function)
                     debug.pdbg(
                         f"Module {self.name} in {self.path}:{self.line_number} references Function {function.name} in {function.path}:{function.start_line_number}"
                     )
                     break
             for constant in all_constants:
                 if symbol.name == constant.name:
-                    self.references.append(constant)
+                    if constant not in self.references:
+                        self.references.append(constant)
                     debug.pdbg(
                         f"Module {self.name} in {self.path}:{self.line_number} references Constant {constant.name} in {constant.path}:{constant.start_line_number}"
                     )
                     break
+
+    def resolve_references(self, keep_functions, all_functions, all_constants):
+        """
+        Resolves references for the module by calling incoming and outgoing reference resolvers.
+        Resolving means:
+            - Find the functions that reference this module's defined symbols
+            - Find the functions and constants that this module references
+
+        Args:
+            keep_functions (list): List of kept function objects.
+            all_functions (list): List of all function objects.
+            all_constants (list): List of all constant objects.
+        """
+        # Resolve kept functions that reference this module's defined symbols
+        self.resolve_incoming_references(keep_functions)
+
+        # If the module isn't referenced by any function, no need to check further
+        if not self.referenced_by:
+            return
+
+        # Resolve functions and constants that this module references
+        self.resolve_outgoing_references(all_functions, all_constants)
+
+
+def modules_by_defined_symbol(modules, symbol_name):
+    """
+    Returns a list of modules that define the given symbol.
+
+    Args:
+        modules (list): List of Module objects.
+        symbol_name (str): The symbol to search for.
+
+    Returns:
+        list: List of modules that define the symbol.
+    """
+    return [
+        module
+        for module in modules
+        if symbol_name in [symbol.name for symbol in module.defined_symbols]
+    ]
 
 
 # Include private members in documentation

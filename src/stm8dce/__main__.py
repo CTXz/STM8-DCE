@@ -30,6 +30,7 @@ import shutil
 
 from . import debug
 from . import asm_analysis
+from . import rel_analysis
 from . import settings
 
 from .__init__ import __version__
@@ -135,8 +136,9 @@ def main():
     # ==========================================
 
     # Copy all files to args.output directory
-    for asm_file in args.input:
-        shutil.copy(asm_file, args.output)
+    for file in args.input:
+        if file.endswith(".asm"):
+            shutil.copy(file, args.output)
 
     # Parse all asm files for globals, interrupts, functions and constants
     # - globals is a list of GlobalDef objects
@@ -165,55 +167,49 @@ def main():
     # ==========================================
 
     # Resolve globals assigned to functions
-    if settings.debug:
-        print()
-        print("Resolving globals assigned to functions")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving globals assigned to functions")
+    debug.pseperator()
 
     for function in functions:
         function.resolve_globals(globals)
 
     # Resolve interrupts
-    if settings.debug:
-        print()
-        print("Resolving interrupts")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving interrupts")
+    debug.pseperator()
 
     for function in functions:
         function.resolve_isr(interrupts)
 
     # Resolve function calls
-    if settings.debug:
-        print()
-        print("Resolving function calls")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving function calls")
+    debug.pseperator()
 
     for function in functions:
         function.resolve_calls(functions)
 
     # Resolve function pointers
-    if settings.debug:
-        print()
-        print("Resolving function pointers")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving function pointers")
+    debug.pseperator()
 
     for function in functions:
         function.resolve_fptrs(functions)
 
     # Resolve globals assigned to constants
-    if settings.debug:
-        print()
-        print("Resolving globals assigned to constants")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving globals assigned to constants")
+    debug.pseperator()
 
     for constant in constants:
         constant.resolve_globals(globals)
 
     # Resolve constants loaded by functions
-    if settings.debug:
-        print()
-        print("Resolving constants loaded by functions")
-        debug.pseperator()
+    debug.pdbg()
+    debug.pdbg("Resolving constants loaded by functions")
+    debug.pseperator()
 
     for function in functions:
         function.resolve_constants(constants)
@@ -222,38 +218,71 @@ def main():
     # Dead Code Evaluation
     # ==========================================
 
+    keep_functions = []
+
     # Get entry function object
     entry_function = asm_analysis.functions_by_name(functions, args.entry)
-    if not entry_function:
+
+    if entry_function:
+        if len(entry_function) > 1:
+            print(f"Error: Multiple definitions for entry label: {args.entry}")
+            for entry_func in entry_function:
+                print(f"In file {entry_func.path}:{entry_func.start_line_number}")
+            exit(1)
+
+        entry_function = entry_function[0]
+
+        # Keep main function and all of its traversed calls
+        debug.pdbg()
+        debug.pdbg(f"Traversing entry function: {args.entry}")
+        debug.pseperator()
+        keep_functions += [entry_function] + asm_analysis.traverse_calls(
+            functions, entry_function
+        )
+    elif modules:
+        # If it's not provided in the asm files, try to look for it in rel and lib files
+        debug.pdbg()
+        debug.pdbg("Entry label not found in ASM files, looking in rel and lib files")
+
+        entry_module = rel_analysis.modules_by_defined_symbol(modules, args.entry)
+        if not entry_module:
+            print(f"Error: Entry label not found: {args.entry}")
+            exit(1)
+        if len(entry_module) > 1:
+            print(f"Error: Multiple definitions for entry label: {args.entry}")
+            for entry_mod in entry_module:
+                print(f"In file {entry_mod.path}:{entry_mod.line_number}")
+            exit(1)
+
+        entry_module = entry_module[0]
+
+        debug.pdbg(
+            f"Entry label found in {entry_module.path}:{entry_module.line_number} in module {entry_module.name}"
+        )
+
+        entry_module.resolve_outgoing_references(functions, constants)
+        for function in entry_module.references:
+            debug.pdbg()
+            debug.pdbg(
+                f"Traversing function {function.name} referenced by module {entry_module.name}"
+            )
+            debug.pseperator()
+            keep_functions += [function] + asm_analysis.traverse_calls(
+                functions, function
+            )
+    else:
         print(f"Error: Entry label not found: {args.entry}")
         exit(1)
-    elif len(entry_function) > 1:
-        print(f"Error: Multiple definitions for entry label: {args.entry}")
-        for entry_func in entry_function:
-            print(f"In file {entry_func.path}:{entry_func.start_line_number}")
-        exit(1)
-
-    entry_function = entry_function[0]
-
-    # Keep main function and all of its traversed calls
-    if settings.debug:
-        print()
-        print(f"Traversing entry function: {args.entry}")
-        debug.pseperator()
-    keep_functions = [entry_function] + asm_analysis.traverse_calls(
-        functions, entry_function
-    )
 
     # Keep functions assigned to a function pointer
     for func in functions:
         for func_pointer in func.fptrs:
             if func_pointer not in keep_functions:
-                if settings.debug:
-                    print()
-                    print(
-                        f"Traversing function assigned to function pointer: {func_pointer.name}"
-                    )
-                    debug.pseperator()
+                debug.pdbg()
+                debug.pdbg(
+                    f"Traversing function assigned to function pointer: {func_pointer.name}"
+                )
+                debug.pseperator()
                 keep_functions += [func_pointer] + asm_analysis.traverse_calls(
                     functions, func_pointer
                 )
@@ -264,10 +293,9 @@ def main():
     for handler in interrupt_handlers:
         if settings.opt_irq and handler.empty:
             continue
-        if settings.debug:
-            print()
-            print(f"Traversing IRQ handler: {handler.name}")
-            debug.pseperator()
+        debug.pdbg()
+        debug.pdbg(f"Traversing IRQ handler: {handler.name}")
+        debug.pseperator()
         keep_functions += [handler] + asm_analysis.traverse_calls(functions, handler)
 
     # Keep functions excluded by the user and all of their traversed calls
@@ -297,10 +325,9 @@ def main():
                 continue
 
             if excluded_function not in keep_functions:
-                if settings.debug:
-                    print()
-                    print(f"Traversing excluded function: {name}")
-                    debug.pseperator()
+                debug.pdbg()
+                debug.pdbg(f"Traversing excluded function: {name}")
+                debug.pseperator()
                 keep_functions += [excluded_function] + asm_analysis.traverse_calls(
                     functions, excluded_function
                 )
@@ -316,12 +343,11 @@ def main():
     for module in modules:
         for function in module.references:
             if function not in keep_functions:
-                if settings.debug:
-                    print()
-                    print(
-                        f"Traversing function {function.name} referenced by module {module.name}"
-                    )
-                    debug.pseperator()
+                debug.pdbg()
+                debug.pdbg(
+                    f"Traversing function {function.name} referenced by module {module.name}"
+                )
+                debug.pseperator()
                 keep_functions += [function] + asm_analysis.traverse_calls(
                     functions, function
                 )
