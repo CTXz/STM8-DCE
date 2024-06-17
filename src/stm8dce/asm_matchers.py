@@ -114,6 +114,15 @@ class Directive:
         """
         return self.line.startswith(".globl")
 
+    def is_dw(self):
+        """
+        Checks if the directive is a .dw directive.
+
+        Returns:
+            bool: True if the directive is a .dw directive, False otherwise.
+        """
+        return self.line.startswith(".dw")
+
     @staticmethod
     def is_area_directive(eval, area_name=None):
         """
@@ -140,6 +149,19 @@ class Directive:
             bool: True if the instance is a Directive and is a global directive, False otherwise.
         """
         return isinstance(eval, Directive) and eval.is_global()
+
+    @staticmethod
+    def is_dw_directive(eval):
+        """
+        Static method to check if an instance is a Directive and is a .dw directive.
+
+        Args:
+            eval: The instance to check.
+
+        Returns:
+            bool: True if the instance is a Directive and is a .dw directive, False otherwise.
+        """
+        return isinstance(eval, Directive) and eval.is_dw()
 
     def __str__(self):
         return self.line

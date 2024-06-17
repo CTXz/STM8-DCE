@@ -337,6 +337,113 @@ class Constant:
                 )
 
 
+class Initializer:
+    """
+    Class to store initializer definitions.
+
+    Input Attributes:
+        path (str): Path of the file the initializer is defined in.
+        start_line_number (int): Start line of the initializer.
+        name (str): Name of the initializer.
+        end_line_number (int): End line of the initializer.
+        pointers_str (list): List of pointers defined by the initializer. Pointers store absolute labels.
+
+    Generated Attributes:
+        pointers (list): List of resolved pointers associated with the initializer (See resolve_pointers).
+
+    The intended use of this class is to first parse the input attributes and then call the resolve_* functions
+    """
+
+    def __init__(self, path, start_line_number, name):
+        self.path = path
+        self.start_line_number = start_line_number
+        self.name = name
+        self.end_line_number = None
+        self.pointers_str = []
+
+        self.function_pointers = []
+        self.constant_pointers = []
+        self.unresolved_pointers = []
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
+    def print(self):
+        """Prints the details of the initializer."""
+        print(f"Initializer: {self.name}")
+        print(f"File: {self.path}")
+        print(f"Start line: {self.start_line_number}")
+        print(f"End line: {self.end_line_number}")
+        print(f"Pointers: {self.pointers_str}")
+        print(
+            f"Resolved function pointers: {[fptr.name for fptr in self.function_pointers]}"
+        )
+        print(
+            f"Resolved constant pointers: {[const.name for const in self.constant_pointers]}"
+        )
+        print(f"Unresolved pointers: {self.unresolved_pointers}")
+
+    def resolve_pointers(self, functions, constants):
+        for pointer_str in self.pointers_str:
+
+            consts = constants_by_name(constants, pointer_str)
+            if consts:
+                glob = any(const.global_defs for const in consts)
+
+                if glob:
+                    if len(consts) > 1:
+                        print(
+                            f"Error: Conflicting definitions for global constant: {pointer_str}"
+                        )
+                        for const in consts:
+                            print(f"In file {const.path}:{const.start_line_number}")
+                        exit(1)
+                    self.constant_pointers.append(consts[0])
+                    debug.pdbg(
+                        f"Initializer {self.name} in {self.path}:{self.start_line_number} defines pointer to global constant {pointer_str} in {consts[0].path}:{consts[0].start_line_number}"
+                    )
+                else:
+                    for const in consts:
+                        if const.path == self.path:
+                            self.constant_pointers.append(const)
+                            debug.pdbg(
+                                f"Initializer {self.name} in {self.path}:{self.start_line_number} defines pointer to local constant {pointer_str} in {consts[0].path}:{consts[0].start_line_number}"
+                            )
+                continue
+
+            funcs = functions_by_name(functions, pointer_str)
+            if funcs:
+                glob = any(func.global_defs for func in funcs)
+                if glob:
+                    if len(funcs) > 1:
+                        print(
+                            f"Error: Conflicting definitions for global function: {pointer_str}"
+                        )
+                        for func in funcs:
+                            print(f"In file {func.path}:{func.start_line_number}")
+                        exit(1)
+                    self.function_pointers.append(funcs[0])
+                    debug.pdbg(
+                        f"Initializer {self.name} in {self.path}:{self.start_line_number} defines pointer to global function {pointer_str} in {funcs[0].path}:{funcs[0].start_line_number}"
+                    )
+                else:
+                    for func in funcs:
+                        if func.path == self.path:
+                            self.function_pointers.append(func)
+                            debug.pdbg(
+                                f"Initializer {self.name} in {self.path}:{self.start_line_number} defines pointer to local function {pointer_str} in {funcs[0].path}:{funcs[0].start_line_number}"
+                            )
+                continue
+
+            self.unresolved_pointers.append(pointer_str)
+            debug.pdbg(
+                f"Initializer {self.name} in {self.path}:{self.start_line_number} defines pointer to external symbol {pointer_str}"
+            )
+
+
 ############################################
 # Filtering & Search functions
 ############################################
@@ -399,6 +506,24 @@ def functions_referencing_external(functions, external_symbol):
         for function in functions
         if external_symbol in function.external_calls
         or external_symbol in function.external_constants
+    ]
+
+
+def initializers_referencing_external(initializers, external_symbol):
+    """
+    Returns a list of initializer objects referencing an external symbol.
+
+    Args:
+        initializers (list): List of Initializer objects.
+        external_symbol (str): Name of the external symbol to match.
+
+    Returns:
+        list: List of matching Initializer objects.
+    """
+    return [
+        initializer
+        for initializer in initializers
+        if external_symbol in initializer.unresolved_pointers
     ]
 
 

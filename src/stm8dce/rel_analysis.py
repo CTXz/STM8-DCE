@@ -107,13 +107,14 @@ class Module:
         """
         self.defined_symbols.append(symbol)
 
-    def resolve_incoming_references(self, keep_functions):
+    def resolve_incoming_references(self, keep_functions, all_initializers):
         """
         Resolves incoming references for the module.
         This means finding the functions that reference this module's defined symbols.
 
         Args:
             keep_functions (list): List of kept function objects.
+            all_initializers (list): List of all initializer objects.
         """
         for symbol in self.defined_symbols:
             match = asm_analysis.functions_referencing_external(
@@ -125,6 +126,18 @@ class Module:
                     self.referenced_by.append(self)
                     debug.pdbg(
                         f"Function {function.name} in {function.path}:{function.start_line_number} references external symbol {symbol.name} in {self.path}:{self.line_number}"
+                    )
+                continue
+
+            match = asm_analysis.initializers_referencing_external(
+                all_initializers, symbol.name
+            )
+            if match:
+                self.referenced_by.extend(match)
+                for initializer in match:
+                    self.referenced_by.append(self)
+                    debug.pdbg(
+                        f"Initializer {initializer.name} in {initializer.path}:{initializer.start_line_number} references external symbol {symbol.name} in {self.path}:{self.line_number}"
                     )
 
     def resolve_outgoing_references(self, all_functions, all_constants):
@@ -154,7 +167,9 @@ class Module:
                     )
                     break
 
-    def resolve_references(self, keep_functions, all_functions, all_constants):
+    def resolve_references(
+        self, keep_functions, all_initializers, all_functions, all_constants
+    ):
         """
         Resolves references for the module by calling incoming and outgoing reference resolvers.
         Resolving means:
@@ -163,11 +178,12 @@ class Module:
 
         Args:
             keep_functions (list): List of kept function objects.
+            all_initializers (list): List of all initializer objects.
             all_functions (list): List of all function objects.
             all_constants (list): List of all constant objects.
         """
         # Resolve kept functions that reference this module's defined symbols
-        self.resolve_incoming_references(keep_functions)
+        self.resolve_incoming_references(keep_functions, all_initializers)
 
         # If the module isn't referenced by any function, no need to check further
         if not self.referenced_by:

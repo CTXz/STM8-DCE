@@ -49,6 +49,7 @@ class ASMParser:
         self.interrupts = []
         self.functions = []
         self.constants = []
+        self.initializers = []
 
         self._relevant = []  # Stack of relevant lines to be parsed
 
@@ -99,6 +100,11 @@ class ASMParser:
                 self._parse_const_section(eval)
                 continue
 
+            # Initializer section
+            if Directive.is_area_directive(eval, "INITIALIZER"):
+                self._parse_initializer_section(eval)
+                continue
+
     def _parse_code_section(self, area):
         """
         Parses the code section of the file and extracts functions.
@@ -146,6 +152,30 @@ class ASMParser:
                 continue
 
         debug.pdbg(f"Line {area.line_number}: Constants section ends here")
+
+    def _parse_initializer_section(self, area):
+        """
+        Parses the initializer section of the file.
+
+        Args:
+            area (Directive): The directive indicating the start of the initializer section.
+        """
+        debug.pdbg(f"Line {area.line_number}: Initializer section starts here")
+
+        while self._relevant:
+            eval = self._relevant.pop(0)
+
+            # Check if this is the end of the initializer section (start of a new area)
+            if Directive.is_area_directive(eval):
+                self._relevant.insert(0, eval)
+                break
+
+            # Parse initializer if an absolute label is found
+            if Label.is_absolute_label(eval):
+                self._parse_initializer(eval)
+                continue
+
+        debug.pdbg(f"Line {area.line_number}: Initializer section ends here")
 
     def _parse_function(self, label):
         """
@@ -231,8 +261,43 @@ class ASMParser:
                 break
 
         debug.pdbg(f"Line {label.line_number}: Constant {label.name} ends here")
-
         self.constants.append(ret_constant)
+
+    def _parse_initializer(self, label):
+        """
+        Parses an initializer and extracts relevant information.
+
+        Args:
+            label (Label): The label indicating the start of the initializer.
+        """
+        debug.pdbg(f"Line {label.line_number}: Initializer {label.name} starts here")
+
+        ret_initializer = asm_analysis.Initializer(
+            label.file_path, label.line_number, label.name
+        )
+
+        while self._relevant:
+            eval = self._relevant.pop(0)
+
+            # Check if this is the end of the initializer
+            if Label.is_absolute_label(eval) or Directive.is_area_directive(eval):
+                self._relevant.insert(0, eval)
+                break
+
+            # Check for .dw directive and see if it defines a label
+            # If so, this is a pointer
+            if (
+                Directive.is_dw_directive(eval)
+                and (eval.value[0].isalpha() or eval.value[0] == "_")
+                and all(char.isalnum() or char == "_" for char in eval.value)
+            ):
+                ret_initializer.pointers_str.append(eval.value)
+                debug.pdbg(
+                    f"Line {eval.line_number}: Initializer contains pointer to symbol {eval.value}"
+                )
+
+        debug.pdbg(f"Line {label.line_number}: Initializer {label.name} ends here")
+        self.initializers.append(ret_initializer)
 
 
 ############################################

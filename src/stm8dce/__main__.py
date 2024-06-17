@@ -160,6 +160,7 @@ def main():
     interrupts = []
     functions = []
     constants = []
+    initializers = []
 
     for output_file in os.listdir(args.output):
         if output_file.endswith(".asm"):
@@ -172,6 +173,7 @@ def main():
             interrupts += asmparser.interrupts
             constants += asmparser.constants
             functions += asmparser.functions
+            initializers += asmparser.initializers
 
     # ==========================================
     # Reference Resolution
@@ -224,6 +226,14 @@ def main():
 
     for function in functions:
         function.resolve_constants(constants)
+
+    # Resolve constants accessed by initializers
+    debug.pdbg()
+    debug.pdbg("Resolving functions and constants accessed by initializers")
+    debug.pseperator()
+
+    for initializer in initializers:
+        initializer.resolve_pointers(functions, constants)
 
     # ==========================================
     # Dead Code Evaluation
@@ -288,15 +298,15 @@ def main():
 
     # Keep functions assigned to a function pointer
     for func in functions:
-        for func_pointer in func.fptrs:
-            if func_pointer not in keep_functions:
+        for function_pointer in func.fptrs:
+            if function_pointer not in keep_functions:
                 debug.pdbg()
                 debug.pdbg(
-                    f"Traversing function assigned to function pointer: {func_pointer.name}"
+                    f"Traversing function assigned to function pointer: {function_pointer.name}"
                 )
                 debug.pseperator()
-                keep_functions += [func_pointer] + asm_analysis.traverse_calls(
-                    functions, func_pointer
+                keep_functions += [function_pointer] + asm_analysis.traverse_calls(
+                    functions, function_pointer
                 )
 
     # Keep interrupt handlers and all of their traversed calls
@@ -309,6 +319,22 @@ def main():
         debug.pdbg(f"Traversing IRQ handler: {handler.name}")
         debug.pseperator()
         keep_functions += [handler] + asm_analysis.traverse_calls(functions, handler)
+
+    # Keep functions accessed by initializers
+    for initializer in initializers:
+        for function_pointer in initializer.function_pointers:
+            if (
+                isinstance(function_pointer, asm_analysis.Function)
+                and function_pointer not in keep_functions
+            ):
+                debug.pdbg()
+                debug.pdbg(
+                    f"Traversing function {function_pointer.name} accessed by initializer"
+                )
+                debug.pseperator()
+                keep_functions += [function_pointer] + asm_analysis.traverse_calls(
+                    functions, function_pointer
+                )
 
     # Keep functions excluded by the user and all of their traversed calls
     if args.exclude_function:
@@ -349,7 +375,7 @@ def main():
 
     # Resolve external references
     for module in modules:
-        module.resolve_references(keep_functions, functions, constants)
+        module.resolve_references(keep_functions, initializers, functions, constants)
 
     # Keep functions and constants that are referenced by lib and rel files
     for module in modules:
@@ -370,6 +396,12 @@ def main():
     # Keep constants loaded by kept functions
     for kept_function in keep_functions:
         keep_constants += kept_function.constants
+
+    # Keep constants accessed by initializers
+    for initializer in initializers:
+        for constant in initializer.constant_pointers:
+            if constant not in keep_constants:
+                keep_constants.append(constant)
 
     # Keep excluded constants
     if args.exclude_constant:
