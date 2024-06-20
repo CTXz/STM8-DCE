@@ -1,0 +1,152 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ISO C Compiler 
+                                      3 ; Version 4.4.1 #14880 (Linux)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module main
+                                      6 	.optsdcc -mstm8
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _alternative_main
+                                     12 	.globl _alternative_main_sub
+                                     13 	.globl _main
+                                     14 	.globl __main
+                                     15 	.globl _NON_EMPTY_IRQ_HANDLER_sub
+                                     16 	.globl _NON_EMPTY_IRQ_HANDLER
+                                     17 	.globl _EMPTY_IRQ_HANDLER
+                                     18 ;--------------------------------------------------------
+                                     19 ; ram data
+                                     20 ;--------------------------------------------------------
+                                     21 	.area DATA
+                                     22 ;--------------------------------------------------------
+                                     23 ; ram data
+                                     24 ;--------------------------------------------------------
+                                     25 	.area INITIALIZED
+                                     26 ;--------------------------------------------------------
+                                     27 ; Stack segment in internal ram
+                                     28 ;--------------------------------------------------------
+                                     29 	.area SSEG
+      000000                         30 __start__stack:
+      000000                         31 	.ds	1
+                                     32 
+                                     33 ;--------------------------------------------------------
+                                     34 ; absolute external ram data
+                                     35 ;--------------------------------------------------------
+                                     36 	.area DABS (ABS)
+                                     37 
+                                     38 ; default segment ordering for linker
+                                     39 	.area HOME
+                                     40 	.area GSINIT
+                                     41 	.area GSFINAL
+                                     42 	.area CONST
+                                     43 	.area INITIALIZER
+                                     44 	.area CODE
+                                     45 
+                                     46 ;--------------------------------------------------------
+                                     47 ; interrupt vector
+                                     48 ;--------------------------------------------------------
+                                     49 	.area HOME
+      000000                         50 __interrupt_vect:
+      000000 82v00u00u00             51 	int s_GSINIT ; reset
+      000004 82 00 00 00             52 	int 0x000000 ; trap
+      000008 82v00u00u02             53 	int _NON_EMPTY_IRQ_HANDLER ; int0
+      00000C 82v00u00u08             54 	int _EMPTY_IRQ_HANDLER ; int1
+                                     55 ;--------------------------------------------------------
+                                     56 ; global & static initialisations
+                                     57 ;--------------------------------------------------------
+                                     58 	.area HOME
+                                     59 	.area GSINIT
+                                     60 	.area GSFINAL
+                                     61 	.area GSINIT
+      000000 CDr00r00         [ 4]   62 	call	___sdcc_external_startup
+      000003 4D               [ 1]   63 	tnz	a
+      000004 27 03            [ 1]   64 	jreq	__sdcc_init_data
+      000006 CCr00r10         [ 2]   65 	jp	__sdcc_program_startup
+      000009                         66 __sdcc_init_data:
+                                     67 ; stm8_genXINIT() start
+      000009 AEr00r00         [ 2]   68 	ldw x, #l_DATA
+      00000C 27 07            [ 1]   69 	jreq	00002$
+      00000E                         70 00001$:
+      00000E 72 4FuFFuFF      [ 1]   71 	clr (s_DATA - 1, x)
+      000012 5A               [ 2]   72 	decw x
+      000013 26 F9            [ 1]   73 	jrne	00001$
+      000015                         74 00002$:
+      000015 AEr00r00         [ 2]   75 	ldw	x, #l_INITIALIZER
+      000018 27 09            [ 1]   76 	jreq	00004$
+      00001A                         77 00003$:
+      00001A D6uFFuFF         [ 1]   78 	ld	a, (s_INITIALIZER - 1, x)
+      00001D D7uFFuFF         [ 1]   79 	ld	(s_INITIALIZED - 1, x), a
+      000020 5A               [ 2]   80 	decw	x
+      000021 26 F7            [ 1]   81 	jrne	00003$
+      000023                         82 00004$:
+                                     83 ; stm8_genXINIT() end
+                                     84 	.area GSFINAL
+      000000 CCr00r10         [ 2]   85 	jp	__sdcc_program_startup
+                                     86 ;--------------------------------------------------------
+                                     87 ; Home
+                                     88 ;--------------------------------------------------------
+                                     89 	.area HOME
+                                     90 	.area HOME
+      000010                         91 __sdcc_program_startup:
+      000010 CCr00r09         [ 2]   92 	jp	_main
+                                     93 ;	return from main will return to caller
+                                     94 ;--------------------------------------------------------
+                                     95 ; code
+                                     96 ;--------------------------------------------------------
+                                     97 	.area CODE
+                                     98 ;	main.c: 4: void NON_EMPTY_IRQ_HANDLER_sub(void) {
+                                     99 ;	-----------------------------------------
+                                    100 ;	 function NON_EMPTY_IRQ_HANDLER_sub
+                                    101 ;	-----------------------------------------
+      000000                        102 _NON_EMPTY_IRQ_HANDLER_sub:
+                                    103 ;	main.c: 5: __asm__("nop");
+      000000 9D               [ 1]  104 	nop
+                                    105 ;	main.c: 6: }
+      000001 81               [ 4]  106 	ret
+                                    107 ;	main.c: 8: void NON_EMPTY_IRQ_HANDLER() __interrupt(0) {
+                                    108 ;	-----------------------------------------
+                                    109 ;	 function NON_EMPTY_IRQ_HANDLER
+                                    110 ;	-----------------------------------------
+      000002                        111 _NON_EMPTY_IRQ_HANDLER:
+      000002 4F               [ 1]  112 	clr	a
+      000003 62               [ 2]  113 	div	x, a
+                                    114 ;	main.c: 9: NON_EMPTY_IRQ_HANDLER_sub();
+      000004 CDr00r00         [ 4]  115 	call	_NON_EMPTY_IRQ_HANDLER_sub
+                                    116 ;	main.c: 10: }
+      000007 80               [11]  117 	iret
+                                    118 ;	main.c: 12: void EMPTY_IRQ_HANDLER() __interrupt(1) {
+                                    119 ;	-----------------------------------------
+                                    120 ;	 function EMPTY_IRQ_HANDLER
+                                    121 ;	-----------------------------------------
+      000008                        122 _EMPTY_IRQ_HANDLER:
+                                    123 ;	main.c: 13: }
+      000008 80               [11]  124 	iret
+                                    125 ;	main.c: 17: void main(void) {
+                                    126 ;	-----------------------------------------
+                                    127 ;	 function main
+                                    128 ;	-----------------------------------------
+      000009                        129 _main:
+                                    130 ;	main.c: 18: _main();
+                                    131 ;	main.c: 19: }
+      000009 CCr00r00         [ 2]  132 	jp	__main
+                                    133 ;	main.c: 21: void alternative_main_sub(void) {
+                                    134 ;	-----------------------------------------
+                                    135 ;	 function alternative_main_sub
+                                    136 ;	-----------------------------------------
+      00000C                        137 _alternative_main_sub:
+                                    138 ;	main.c: 22: _main();
+                                    139 ;	main.c: 23: }
+      00000C CCr00r00         [ 2]  140 	jp	__main
+                                    141 ;	main.c: 25: void alternative_main(void) {
+                                    142 ;	-----------------------------------------
+                                    143 ;	 function alternative_main
+                                    144 ;	-----------------------------------------
+      00000F                        145 _alternative_main:
+                                    146 ;	main.c: 26: alternative_main_sub();
+                                    147 ;	main.c: 27: }
+      00000F CCr00r0C         [ 2]  148 	jp	_alternative_main_sub
+                                    149 	.area CODE
+                                    150 	.area CONST
+                                    151 	.area INITIALIZER
+                                    152 	.area CABS (ABS)

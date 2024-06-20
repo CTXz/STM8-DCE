@@ -1,0 +1,33 @@
+XH3
+H B areas 4 global symbols
+M rel
+O -mstm8
+S _function_expected_by_module Ref000000
+S _CONSTANT_EXPECTED_BY_MODULE Ref000000
+S .__.ABS. Def000000
+A _CODE size 0 flags 0 addr 0
+A DATA size 0 flags 0 addr 0
+A INITIALIZED size 0 flags 0 addr 0
+A DABS size 0 flags 8 addr 0
+A HOME size 0 flags 0 addr 0
+A GSINIT size 0 flags 0 addr 0
+A GSFINAL size 0 flags 0 addr 0
+A CONST size 0 flags 0 addr 0
+A INITIALIZER size 0 flags 0 addr 0
+A CODE size 18 flags 0 addr 0
+S _call_function_expected_by_module Def000000
+A CABS size 0 flags 8 addr 0
+T 00 00 00
+R 00 00 00 09
+T 00 00 00 52 02 5F
+R 00 00 00 09
+T 00 00 03
+R 00 00 00 09
+T 00 00 03 90 CE 00 00 17 01 13 01 2E 08 89 CD
+R 00 00 00 09 12 05 00 01
+T 00 00 0F 00 00 85 5C 20 EE
+R 00 00 00 09 02 03 00 00
+T 00 00 15
+R 00 00 00 09
+T 00 00 15 5B 02 81
+R 00 00 00 09

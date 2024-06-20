@@ -1,0 +1,47 @@
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8)  Page 1
+Hexadecimal [24-Bits]
+
+Symbol Table
+
+    .__.$$$.                                                    =  002710 L
+    .__.ABS.                                                    =  000000 G
+    .__.CPU.                                                    =  000000 L
+    .__.H$L.                                                    =  000001 L
+  A _EMPTY_IRQ_HANDLER                                             000008 GR
+  A _NON_EMPTY_IRQ_HANDLER                                         000002 GR
+  A _NON_EMPTY_IRQ_HANDLER_sub                                     000000 GR
+    ___sdcc_external_startup                                       ****** GX
+  5 __interrupt_vect                                               000000 R
+    __main                                                         ****** GX
+  6 __sdcc_init_data                                               000009 R
+  5 __sdcc_program_startup                                         000010 R
+  3 __start__stack                                                 000000 R
+  A _alternative_main                                              00000F GR
+  A _alternative_main_sub                                          00000C GR
+  A _main                                                          000009 GR
+    l_DATA                                                         ****** GX
+    l_INITIALIZER                                                  ****** GX
+    s_DATA                                                         ****** GX
+    s_GSINIT                                                       ****** GX
+    s_INITIALIZED                                                  ****** GX
+    s_INITIALIZER                                                  ****** GX
+
+
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8)  Page 2
+Hexadecimal [24-Bits]
+
+Area Table
+
+   0 _CODE                                      size      0   flags    0
+   1 DATA                                       size      0   flags    0
+   2 INITIALIZED                                size      0   flags    0
+   3 SSEG                                       size      1   flags    0
+   4 DABS                                       size      0   flags    8
+   5 HOME                                       size     13   flags    0
+   6 GSINIT                                     size     23   flags    0
+   7 GSFINAL                                    size      3   flags    0
+   8 CONST                                      size      0   flags    0
+   9 INITIALIZER                                size      0   flags    0
+   A CODE                                       size     12   flags    0
+   B CABS                                       size      0   flags    8
+

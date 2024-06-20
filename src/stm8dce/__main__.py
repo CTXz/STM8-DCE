@@ -37,10 +37,6 @@ from .__init__ import __version__
 from .asm_parser import ASMParser
 from .rel_parser import RELParser
 
-############################################
-# Arg Parsing
-############################################
-
 
 def eval_flabel(flabel):
     """
@@ -61,74 +57,45 @@ def eval_flabel(flabel):
     return None, flabel
 
 
-############################################
-# Main
-############################################
-
-
-def main():
+def run(
+    input_files,
+    output_dir,
+    entry_label,
+    exclude_functions,
+    exclude_constants,
+    codeseg,
+    constseg,
+    verbose,
+    debug_flag,
+    opt_irq,
+):
     """
-    The main function of the STM8DCE tool.
-    Parses command-line arguments, processes the specified assembly files, and performs dead code elimination.
+    Perform dead code elimination on the given input files.
+
+    This function processes the specified assembly (.asm), relocatable (.rel), and library (.lib) files to identify and remove unused functions and constants.
+    The processed files are stored in the specified output directory.
+
+    Args:
+        input_files (list of str): List of input file paths (ASM, rel, and lib files).
+        output_dir (str): Directory where the processed ASM files will be stored.
+        entry_label (str): Entry label (default: "_main").
+        exclude_functions (list of str): List of function labels to exclude from dead code elimination.
+        exclude_constants (list of str): List of constant labels to exclude from dead code elimination.
+        codeseg (str): Name of the code segment (default: "CODE").
+        constseg (str): Name of the constant segment (default: "CONST").
+        verbose (bool): Enable verbose output.
+        debug_flag (bool): Enable debug output.
+        opt_irq (bool): Option to remove unused IRQ handlers (Caution: Removes iret's for unused interrupts!).
     """
-    # ==========================================
-    # Arg Parsing
-    # ==========================================
-    parser = argparse.ArgumentParser(description="STM8 SDCC dead code elimination tool")
-    parser.add_argument("input", nargs="+", help="ASM, rel and lib files", type=str)
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="Output directory to store processed ASM files",
-        required=True,
-    )
-    parser.add_argument("-e", "--entry", help="Entry label", type=str, default="_main")
-    parser.add_argument(
-        "-xf", "--exclude-function", help="Exclude functions", type=str, nargs="+"
-    )
-    parser.add_argument(
-        "-xc",
-        "--exclude-constant",
-        help="Exclude interrupt handlers",
-        type=str,
-        nargs="+",
-    )
-    parser.add_argument(
-        "--codeseg", help="Code segment name (default: CODE)", type=str, default="CODE"
-    )
-    parser.add_argument(
-        "--constseg",
-        help="Constant segment name (default: CONST)",
-        type=str,
-        default="CONST",
-    )
-    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
-    parser.add_argument("-d", "--debug", help="Debug output", action="store_true")
-    parser.add_argument(
-        "--version", action="version", version="%(prog)s " + __version__
-    )
-    parser.add_argument(
-        "--opt-irq",
-        help="Remove unused IRQ handlers (Caution: Removes iret's for unused interrupts!)",
-        action="store_true",
-    )
-
-    parser.epilog = (
-        "Example: stm8dce file1.asm file2.asm file3.rel file4.lib ... -o output/"
-    )
-
-    args = parser.parse_args()
-
-    settings.verbose = args.verbose or args.debug
-    settings.debug = args.debug
-    settings.opt_irq = args.opt_irq
-    settings.codeseg = args.codeseg
-    settings.constseg = args.constseg
+    settings.verbose = verbose or debug_flag
+    settings.debug = debug_flag
+    settings.opt_irq = opt_irq
+    settings.codeseg = codeseg
+    settings.constseg = constseg
 
     # Check if output directory exists
-    if not os.path.exists(args.output):
-        print(f"Error: Output directory does not exist: {args.output}")
-        exit(1)
+    if not os.path.exists(output_dir):
+        raise ValueError(f"Error: Output directory does not exist: {output_dir}")
 
     # ==========================================
     # rel and lib Parsing
@@ -137,7 +104,7 @@ def main():
     # Gather all modules from rel and lib files
     modules = []
 
-    for input_file in args.input:
+    for input_file in input_files:
         if input_file.endswith(".rel") or input_file.endswith(".lib"):
             relparser = RELParser(input_file)
             modules += relparser.modules
@@ -146,29 +113,21 @@ def main():
     # ASM Parsing
     # ==========================================
 
-    # Copy all files to args.output directory
-    for file in args.input:
+    # Copy all files to output directory
+    for file in input_files:
         if file.endswith(".asm"):
-            shutil.copy(file, args.output)
+            shutil.copy(file, output_dir)
 
     # Parse all asm files for globals, interrupts, functions and constants
-    # - globals is a list of GlobalDef objects
-    # - interrupts is a list of IntDef objects
-    # - functions is a list of Function objects
-    # - constants is a list of Constant objects
     globals = []
     interrupts = []
     functions = []
     constants = []
     initializers = []
 
-    for output_file in os.listdir(args.output):
+    for output_file in os.listdir(output_dir):
         if output_file.endswith(".asm"):
-            # g_defs, i_defs, c_defs, f_defs = asm_parsers.parse_file(
-            #     args.output + "/" + output_file
-            # )
-            asmparser = ASMParser(args.output + "/" + output_file)
-
+            asmparser = ASMParser(os.path.join(output_dir, output_file))
             globals += asmparser.globals
             interrupts += asmparser.interrupts
             constants += asmparser.constants
@@ -243,20 +202,19 @@ def main():
     keep_constants = []
 
     # Get entry function object
-    entry_function = asm_analysis.functions_by_name(functions, args.entry)
+    entry_function = asm_analysis.functions_by_name(functions, entry_label)
 
     if entry_function:
         if len(entry_function) > 1:
-            print(f"Error: Multiple definitions for entry label: {args.entry}")
-            for entry_func in entry_function:
-                print(f"In file {entry_func.path}:{entry_func.start_line_number}")
-            exit(1)
+            raise ValueError(
+                f"Error: Multiple definitions for entry label: {entry_label}"
+            )
 
         entry_function = entry_function[0]
 
         # Keep main function and all of its traversed calls
         debug.pdbg()
-        debug.pdbg(f"Traversing entry function: {args.entry}")
+        debug.pdbg(f"Traversing entry function: {entry_label}")
         debug.pseperator()
         keep_functions += [entry_function] + asm_analysis.traverse_calls(
             functions, entry_function
@@ -266,15 +224,13 @@ def main():
         debug.pdbg()
         debug.pdbg("Entry label not found in ASM files, looking in rel and lib files")
 
-        entry_module = rel_analysis.modules_by_defined_symbol(modules, args.entry)
+        entry_module = rel_analysis.modules_by_defined_symbol(modules, entry_label)
         if not entry_module:
-            print(f"Error: Entry label not found: {args.entry}")
-            exit(1)
+            raise ValueError(f"Error: Entry label not found: {entry_label}")
         if len(entry_module) > 1:
-            print(f"Error: Multiple definitions for entry label: {args.entry}")
-            for entry_mod in entry_module:
-                print(f"In file {entry_mod.path}:{entry_mod.line_number}")
-            exit(1)
+            raise ValueError(
+                f"Error: Multiple definitions for entry label: {entry_label}"
+            )
 
         entry_module = entry_module[0]
 
@@ -293,8 +249,7 @@ def main():
                 functions, function
             )
     else:
-        print(f"Error: Entry label not found: {args.entry}")
-        exit(1)
+        raise ValueError(f"Error: Entry label not found: {entry_label}")
 
     # Keep functions assigned to a function pointer
     for func in functions:
@@ -337,8 +292,8 @@ def main():
                 )
 
     # Keep functions excluded by the user and all of their traversed calls
-    if args.exclude_function:
-        for exclude_name in args.exclude_function:
+    if exclude_functions:
+        for exclude_name in exclude_functions:
             filename, name = eval_flabel(exclude_name)
             if filename:
                 excluded_function = asm_analysis.function_by_filename_name(
@@ -347,15 +302,10 @@ def main():
             else:
                 excluded_function = asm_analysis.functions_by_name(functions, name)
                 if len(excluded_function) > 1:
-                    print(
+                    raise ValueError(
                         f"Error: Multiple possible definitions for excluded function: {name}"
                     )
-                    for ex_func in excluded_function:
-                        print(f"In file {ex_func.path}:{ex_func.start_line_number}")
-                    print(
-                        "Please use the format file.asm:label to specify the exact function to exclude"
-                    )
-                    exit(1)
+
                 excluded_function = excluded_function[0] if excluded_function else None
 
             if not excluded_function:
@@ -404,8 +354,8 @@ def main():
                 keep_constants.append(constant)
 
     # Keep excluded constants
-    if args.exclude_constant:
-        for excluded_const_name in args.exclude_constant:
+    if exclude_constants:
+        for excluded_const_name in exclude_constants:
             filename, name = eval_flabel(excluded_const_name)
             if filename:
                 excluded_constant = asm_analysis.constant_by_filename_name(
@@ -414,15 +364,10 @@ def main():
             else:
                 excluded_constant = asm_analysis.constants_by_name(constants, name)
                 if len(excluded_constant) > 1:
-                    print(
+                    raise ValueError(
                         f"Error: Multiple possible definitions for excluded constant: {name}"
                     )
-                    for exc_const in excluded_constant:
-                        print(f"In file {exc_const.path}:{exc_const.start_line_number}")
-                    print(
-                        "Please use the format file.asm:label to specify the exact constant to exclude"
-                    )
-                    exit(1)
+
                 excluded_constant = excluded_constant[0] if excluded_constant else None
 
             if not excluded_constant:
@@ -591,6 +536,76 @@ def main():
     )
     print(
         f"{len(remove_constants)} unused constants from a total of {len(constants)} constants"
+    )
+
+    # Return removed and kept functions and constants for testing
+    return remove_functions, remove_constants, keep_functions, keep_constants
+
+
+def main():
+    """
+    The main function of the STM8DCE tool.
+    Parses command-line arguments and calls the run function.
+    """
+    # ==========================================
+    # Arg Parsing
+    # ==========================================
+    parser = argparse.ArgumentParser(description="STM8 SDCC dead code elimination tool")
+    parser.add_argument("input", nargs="+", help="ASM, rel and lib files", type=str)
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output directory to store processed ASM files",
+        required=True,
+    )
+    parser.add_argument("-e", "--entry", help="Entry label", type=str, default="_main")
+    parser.add_argument(
+        "-xf", "--exclude-function", help="Exclude functions", type=str, nargs="+"
+    )
+    parser.add_argument(
+        "-xc",
+        "--exclude-constant",
+        help="Exclude interrupt handlers",
+        type=str,
+        nargs="+",
+    )
+    parser.add_argument(
+        "--codeseg", help="Code segment name (default: CODE)", type=str, default="CODE"
+    )
+    parser.add_argument(
+        "--constseg",
+        help="Constant segment name (default: CONST)",
+        type=str,
+        default="CONST",
+    )
+    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+    parser.add_argument("-d", "--debug", help="Debug output", action="store_true")
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s " + __version__
+    )
+    parser.add_argument(
+        "--opt-irq",
+        help="Remove unused IRQ handlers (Caution: Removes iret's for unused interrupts!)",
+        action="store_true",
+    )
+
+    parser.epilog = (
+        "Example: stm8dce file1.asm file2.asm file3.rel file4.lib ... -o output/"
+    )
+
+    args = parser.parse_args()
+
+    run(
+        input_files=args.input,
+        output_dir=args.output,
+        entry_label=args.entry,
+        exclude_functions=args.exclude_function,
+        exclude_constants=args.exclude_constant,
+        codeseg=args.codeseg,
+        constseg=args.constseg,
+        verbose=args.verbose,
+        debug_flag=args.debug,
+        opt_irq=args.opt_irq,
     )
 
 

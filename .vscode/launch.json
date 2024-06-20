@@ -33,8 +33,17 @@
                 "${workspaceFolder}/example/build/asm/stm8s_tim1.asm",
                 "${workspaceFolder}/example/build/asm/stm8s_tim2.asm",
                 "${workspaceFolder}/example/build/asm/stm8s_uart1.asm",
-                "${workspaceFolder}/example/build/asm/stm8s_wwdg.asm"
+                "${workspaceFolder}/example/build/asm/stm8s_wwdg.asm",
+                "${workspaceFolder}/example/build/asm/test.asm"
             ]
+        },
+        {
+            "name": "Python: Run test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/test.py",
+            "console": "integratedTerminal",
+            "args": []
         }
     ]
 }
