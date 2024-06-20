@@ -1,3 +1,29 @@
+# Copyright (C) 2024 Patrick Pedersen
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# SDCC STM8 Dead Code Elimination Tool
+# Description: Main file for the STM8 SDCC dead code elimination tool.
+
+# Credits: This tool has been largely inspired by XaviDCR92's sdccrm tool:
+#          https://github.com/XaviDCR92/sdccrm
+#
+
+"""
+Unit tests for the STM8 SDCC dead code elimination tool.
+"""
+
 import unittest
 import subprocess
 import os
@@ -10,103 +36,134 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../s
 from stm8dce.__main__ import run
 
 
-def asmtouple(symbolname, filename, output_dir="build/dce"):
+def asmsym(symbolname, filename, output_dir="build/dce"):
     return ("_" + symbolname, output_dir + "/" + filename.replace(".c", ".asm"))
 
 
-ALL_FUNCTIONS = [
-    asmtouple("main", "main.c"),
-    asmtouple("alternative_main_sub", "main.c"),
-    asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-    asmtouple("alternative_main", "main.c"),
-    asmtouple("unused_function", "_main.c"),
-    asmtouple("used_function_sub", "_main.c"),
-    asmtouple("used_function", "_main.c"),
-    asmtouple("function_used_by_ptr_sub", "_main.c"),
-    asmtouple("function_used_by_ptr", "_main.c"),
-    asmtouple("excluded_function_sub", "_main.c"),
-    asmtouple("excluded_function", "_main.c"),
-    asmtouple("local_excluded_function_sub", "_main.c"),
-    asmtouple("local_excluded_function", "_main.c"),
-    asmtouple("function_expected_by_module", "_main.c"),
-    asmtouple("function_expected_by_module_sub", "_main.c"),
-    asmtouple("local_function", "_main.c"),
-    asmtouple("_main", "_main.c"),
-    asmtouple("external_function_sub", "extra.c"),
-    asmtouple("external_function", "extra.c"),
-    asmtouple("local_excluded_function", "extra.c"),
-    asmtouple("local_function", "extra.c"),
-]
+def create_asmsyms(symbol_names, filename, output_dir="build/dce"):
+    return [asmsym(name, filename, output_dir) for name in symbol_names]
 
-ALL_IRQ_HANDLERS = [
-    asmtouple("NON_EMPTY_IRQ_HANDLER", "main.c"),
-    asmtouple("EMPTY_IRQ_HANDLER", "main.c"),
-]
 
-ALL_CONSTANTS = [
-    asmtouple("UNUSED_CONSTANT", "_main.c"),
-    asmtouple("USED_CONSTANT", "_main.c"),
-    asmtouple("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
-    asmtouple("EXCLUDED_CONSTANT", "_main.c"),
-    asmtouple("LOCAL_CONSTANT", "_main.c"),
-    asmtouple("LOCAL_EXCLUDED_CONSTANT", "_main.c"),
-    asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-    asmtouple("LOCAL_CONSTANT", "extra.c"),
-    asmtouple("LOCAL_EXCLUDED_CONSTANT", "extra.c"),
-]
+def create_all_functions(output_dir="build/dce"):
+    return (
+        create_asmsyms(
+            [
+                "main",
+                "alternative_main",
+                "alternative_main_sub",
+                "NON_EMPTY_IRQ_HANDLER_sub",
+                "NON_EMPTY_IRQ_HANDLER",
+                "EMPTY_IRQ_HANDLER",
+            ],
+            "main.c",
+            output_dir,
+        )
+        + create_asmsyms(
+            [
+                "unused_function",
+                "used_function_sub",
+                "used_function",
+                "function_used_by_ptr_sub",
+                "function_used_by_ptr",
+                "excluded_function_sub",
+                "excluded_function",
+                "local_excluded_function_sub",
+                "local_excluded_function",
+                "function_expected_by_module",
+                "function_expected_by_module_sub",
+                "local_function",
+                "_main",
+            ],
+            "_main.c",
+            output_dir,
+        )
+        + create_asmsyms(
+            [
+                "external_function_sub",
+                "external_function",
+                "local_excluded_function",
+                "local_function",
+            ],
+            "extra.c",
+            output_dir,
+        )
+    )
 
-ALL_FUNCTIONS_CUSTOM_CODECONSTSEG = [
-    asmtouple("main", "main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("alternative_main_sub", "main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("alternative_main", "main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("unused_function", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("used_function_sub", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("used_function", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("function_used_by_ptr_sub", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("function_used_by_ptr", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("excluded_function_sub", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("excluded_function", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple(
-        "local_excluded_function_sub", "_main.c", "build/dce_custom_codeconstseg"
-    ),
-    asmtouple("local_excluded_function", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple(
-        "function_expected_by_module", "_main.c", "build/dce_custom_codeconstseg"
-    ),
-    asmtouple(
-        "function_expected_by_module_sub", "_main.c", "build/dce_custom_codeconstseg"
-    ),
-    asmtouple("local_function", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("_main", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("external_function_sub", "extra.c", "build/dce_custom_codeconstseg"),
-    asmtouple("external_function", "extra.c", "build/dce_custom_codeconstseg"),
-    asmtouple("local_excluded_function", "extra.c", "build/dce_custom_codeconstseg"),
-    asmtouple("local_function", "extra.c", "build/dce_custom_codeconstseg"),
-]
 
-ALL_IRQ_HANDLERS_CUSTOM_CODECONSTSEG = [
-    asmtouple("NON_EMPTY_IRQ_HANDLER", "main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("EMPTY_IRQ_HANDLER", "main.c", "build/dce_custom_codeconstseg"),
-]
+def create_all_constants(output_dir="build/dce"):
+    return create_asmsyms(
+        [
+            "UNUSED_CONSTANT",
+            "USED_CONSTANT",
+            "CONSTANT_EXPECTED_BY_MODULE",
+            "EXCLUDED_CONSTANT",
+            "LOCAL_CONSTANT",
+            "LOCAL_EXCLUDED_CONSTANT",
+        ],
+        "_main.c",
+        output_dir,
+    ) + create_asmsyms(
+        ["EXTERNAL_CONST_ARRAY", "LOCAL_CONSTANT", "LOCAL_EXCLUDED_CONSTANT"],
+        "extra.c",
+        output_dir,
+    )
 
-ALL_CONSTANTS_CUSTOM_CODECONSTSEG = [
-    asmtouple("UNUSED_CONSTANT", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("USED_CONSTANT", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple(
-        "CONSTANT_EXPECTED_BY_MODULE", "_main.c", "build/dce_custom_codeconstseg"
-    ),
-    asmtouple("EXCLUDED_CONSTANT", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("LOCAL_CONSTANT", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("LOCAL_EXCLUDED_CONSTANT", "_main.c", "build/dce_custom_codeconstseg"),
-    asmtouple("EXTERNAL_CONST_ARRAY", "extra.c", "build/dce_custom_codeconstseg"),
-    asmtouple("LOCAL_CONSTANT", "extra.c", "build/dce_custom_codeconstseg"),
-    asmtouple("LOCAL_EXCLUDED_CONSTANT", "extra.c", "build/dce_custom_codeconstseg"),
-]
+
+def assert_eq_elements(expected, received):
+    expected_set = set(expected)
+    received_set = set(received)
+
+    missing_elements = expected_set - received_set
+    extraneous_elements = received_set - expected_set
+
+    if missing_elements or extraneous_elements:
+        raise AssertionError(
+            f"Missing elements: {missing_elements}\n"
+            f"Extraneous elements: {extraneous_elements}"
+        )
+
+
+def stm8dce_obj_to_asmsym(obj_list):
+    return [(obj.name, obj.path) for obj in obj_list]
+
+
+def antilist(full_list, sublist):
+    return [item for item in full_list if item not in sublist]
+
+
+def assert_dce(
+    expected_kept_functions,
+    expected_kept_constants,
+    keep_functions,
+    keep_constants,
+    remove_functions,
+    remove_constants,
+    output_dir="build/dce",
+    expected_removed_functions=None,
+    expected_removed_constants=None,
+):
+    received_kept_functions = stm8dce_obj_to_asmsym(keep_functions)
+    assert_eq_elements(expected_kept_functions, received_kept_functions)
+
+    if expected_removed_functions is None:
+        expected_removed_functions = antilist(
+            create_all_functions(output_dir=output_dir), expected_kept_functions
+        )
+    received_removed_functions = stm8dce_obj_to_asmsym(remove_functions)
+    assert_eq_elements(expected_removed_functions, received_removed_functions)
+
+    received_kept_constants = stm8dce_obj_to_asmsym(keep_constants)
+    assert_eq_elements(expected_kept_constants, received_kept_constants)
+
+    if expected_removed_constants is None:
+        expected_removed_constants = antilist(
+            create_all_constants(output_dir=output_dir), expected_kept_constants
+        )
+    received_removed_constants = stm8dce_obj_to_asmsym(remove_constants)
+    assert_eq_elements(expected_removed_constants, received_removed_constants)
 
 
 class TestDeadCodeElimination(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         # CD into the test directory
@@ -142,45 +199,54 @@ class TestDeadCodeElimination(unittest.TestCase):
             raise RuntimeError(f"make lib failed with error: {result.stderr}")
 
     def test_general_optimization(self):
-        expected_kept_functions = [
-            asmtouple("main", "main.c"),
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-        ]
+        output_dir = "build/dce"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
+                "main.c",
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                ],
+                "_main.c",
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
+                "extra.c",
+            )
+        )
 
-        expected_kept_functions += ALL_IRQ_HANDLERS
+        expected_kept_functions.append(asmsym("NON_EMPTY_IRQ_HANDLER", "main.c"))
+
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
+        ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/main.asm",
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-        ]
-        output_dir = "build/dce"
-        entry_label = "_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
+        os.makedirs(output_dir)
 
         (
             remove_functions,
@@ -188,143 +254,79 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/main.asm",
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
     def test_irq_optimization(self):
-        expected_kept_functions = [
-            asmtouple("main", "main.c"),
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-        ]
+        output_dir = "build/dce"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                ],
+                "main.c",
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                ],
+                "_main.c",
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
+                "extra.c",
+            )
+        )
 
-        expected_kept_functions.append(asmtouple("NON_EMPTY_IRQ_HANDLER", "main.c"))
+        expected_kept_functions.append(asmsym("NON_EMPTY_IRQ_HANDLER", "main.c"))
+
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
+        ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/main.asm",
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-        ]
-
-        output_dir = "build/dce"
-        entry_label = "_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = True
+        os.makedirs(output_dir)
 
         (
             remove_functions,
@@ -332,153 +334,89 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/main.asm",
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=True,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        expected_removed_functions.append(asmtouple("EMPTY_IRQ_HANDLER", "main.c"))
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
     def test_exclusion(self):
-        expected_kept_functions = [
-            asmtouple("main", "main.c"),
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-            asmtouple("excluded_function", "_main.c"),
-            asmtouple("excluded_function_sub", "_main.c"),
-            asmtouple("local_excluded_function", "_main.c"),
-            asmtouple("local_excluded_function_sub", "_main.c"),
-        ]
+        output_dir = "build/dce"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
+                "main.c",
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                    "excluded_function",
+                    "excluded_function_sub",
+                    "local_excluded_function",
+                    "local_excluded_function_sub",
+                ],
+                "_main.c",
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
+                "extra.c",
+            )
+        )
 
-        expected_kept_functions += ALL_IRQ_HANDLERS
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("EXCLUDED_CONSTANT", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("LOCAL_EXCLUDED_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
+        ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/main.asm",
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-        ]
-        output_dir = "build/dce"
-        entry_label = "_main"
-        exclude_functions = ["_excluded_function", "_local_excluded_function"]
-        exclude_constants = ["_EXCLUDED_CONSTANT", "_LOCAL_EXCLUDED_CONSTANT"]
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
+        os.makedirs(output_dir)
 
         # Should raise a ValueError since _local_excluded_function
         # and _LOCAL_EXCLUDED_CONSTANT are defined multiple times
         # and must be provided with file:name syntax
-        # TODO: Confirm ValueError is really the correct one
         with self.assertRaises(ValueError):
             (
                 remove_functions,
@@ -486,20 +424,21 @@ class TestDeadCodeElimination(unittest.TestCase):
                 keep_functions,
                 keep_constants,
             ) = run(
-                input_files=input_files,
+                input_files=[
+                    "build/asm/main.asm",
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                ],
                 output_dir=output_dir,
-                entry_label=entry_label,
-                exclude_functions=exclude_functions,
-                exclude_constants=exclude_constants,
-                codeseg=codeseg,
-                constseg=constseg,
-                verbose=verbose,
-                debug_flag=debug_flag,
-                opt_irq=opt_irq,
+                entry_label="_main",
+                exclude_functions=["_excluded_function", "_local_excluded_function"],
+                exclude_constants=["_EXCLUDED_CONSTANT", "_LOCAL_EXCLUDED_CONSTANT"],
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
             )
-
-        exclude_functions = ["_excluded_function", "_main.asm:_local_excluded_function"]
-        exclude_constants = ["_EXCLUDED_CONSTANT", "_main.asm:_LOCAL_EXCLUDED_CONSTANT"]
 
         (
             remove_functions,
@@ -507,145 +446,86 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/main.asm",
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=[
+                "_excluded_function",
+                "_main.asm:_local_excluded_function",
+            ],
+            exclude_constants=[
+                "_EXCLUDED_CONSTANT",
+                "_main.asm:_LOCAL_EXCLUDED_CONSTANT",
+            ],
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("EXCLUDED_CONSTANT", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("LOCAL_EXCLUDED_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
     def test_alternative_entry_point(self):
-        expected_kept_functions = [
-            asmtouple("alternative_main", "main.c"),
-            asmtouple("alternative_main_sub", "main.c"),
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-        ]
+        output_dir = "build/dce"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "alternative_main",
+                    "alternative_main_sub",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
+                "main.c",
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                ],
+                "_main.c",
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
+                "extra.c",
+            )
+        )
 
-        expected_kept_functions += ALL_IRQ_HANDLERS
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
+        ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/main.asm",
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-        ]
-        output_dir = "build/dce"
-        entry_label = "_alternative_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
+        os.makedirs(output_dir)
 
         (
             remove_functions,
@@ -653,145 +533,82 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/main.asm",
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_alternative_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
     def test_rel(self):
-        expected_kept_functions = [
-            asmtouple("main", "main.c"),
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c"),
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-            asmtouple("function_expected_by_module", "_main.c"),
-            asmtouple("function_expected_by_module_sub", "_main.c"),
-        ]
+        output_dir = "build/dce"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
+                "main.c",
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                    "function_expected_by_module",
+                    "function_expected_by_module_sub",
+                ],
+                "_main.c",
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
+                "extra.c",
+            )
+        )
 
-        expected_kept_functions += ALL_IRQ_HANDLERS
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
+        ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/main.asm",
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-            "build/obj/rel.rel",
-        ]
-        output_dir = "build/dce"
-        entry_label = "_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
+        os.makedirs(output_dir)
 
         (
             remove_functions,
@@ -799,149 +616,92 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/main.asm",
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+                "build/obj/rel.rel",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
     def test_lib(self):
-        ALL_FUNCTIONS_WITHOUT_MAIN = ALL_FUNCTIONS.copy()
-        ALL_FUNCTIONS_WITHOUT_MAIN.remove(asmtouple("main", "main.c"))
-        ALL_FUNCTIONS_WITHOUT_MAIN.remove(asmtouple("alternative_main_sub", "main.c"))
-        ALL_FUNCTIONS_WITHOUT_MAIN.remove(asmtouple("alternative_main", "main.c"))
-        ALL_FUNCTIONS_WITHOUT_MAIN.remove(
-            asmtouple("NON_EMPTY_IRQ_HANDLER_sub", "main.c")
+        output_dir = "build/dce"
+
+        ALL_FUNCTIONS_WITHOUT_MAIN = [
+            f
+            for f in create_all_functions(output_dir=output_dir)
+            if f
+            not in create_asmsyms(
+                [
+                    "main",
+                    "alternative_main_sub",
+                    "alternative_main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
+                "main.c",
+                output_dir=output_dir,
+            )
+        ]
+
+        expected_kept_functions = create_asmsyms(
+            [
+                "_main",
+                "used_function",
+                "used_function_sub",
+                "local_function_sub",
+                "local_function",
+                "function_used_by_ptr",
+                "function_used_by_ptr_sub",
+                "function_expected_by_module",
+                "function_expected_by_module_sub",
+            ],
+            "_main.c",
+            output_dir,
+        ) + create_asmsyms(
+            [
+                "external_function",
+                "external_function_sub",
+            ],
+            "extra.c",
+            output_dir,
         )
 
-        expected_kept_functions = [
-            asmtouple("_main", "_main.c"),
-            asmtouple("used_function", "_main.c"),
-            asmtouple("used_function_sub", "_main.c"),
-            asmtouple("local_function_sub", "_main.c"),
-            asmtouple("local_function", "_main.c"),
-            asmtouple("function_used_by_ptr", "_main.c"),
-            asmtouple("function_used_by_ptr_sub", "_main.c"),
-            asmtouple("external_function", "extra.c"),
-            asmtouple("external_function_sub", "extra.c"),
-            asmtouple("function_expected_by_module", "_main.c"),
-            asmtouple("function_expected_by_module_sub", "_main.c"),
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c"),
+            asmsym("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
+            asmsym("LOCAL_CONSTANT", "_main.c"),
+            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
         ]
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce"):
-            for file in os.listdir("build/dce"):
-                os.remove(os.path.join("build/dce", file))
-            os.rmdir("build/dce")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce")
-
-        input_files = [
-            "build/asm/_main.asm",
-            "build/asm/extra.asm",
-            "build/obj/lib.lib",
-        ]
-        output_dir = "build/dce"
-        entry_label = "_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "CODE"
-        constseg = "CONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
+        os.makedirs(output_dir)
 
         (
             remove_functions,
@@ -949,287 +709,132 @@ class TestDeadCodeElimination(unittest.TestCase):
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm/_main.asm",
+                "build/asm/extra.asm",
+                "build/obj/lib.lib",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="CODE",
+            constseg="CONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
+        expected_removed_functions = antilist(
+            ALL_FUNCTIONS_WITHOUT_MAIN, expected_kept_functions
+        )
+        expected_removed_constants = antilist(
+            create_all_constants(output_dir=output_dir), expected_kept_constants
+        )
 
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-        for f in ALL_FUNCTIONS_WITHOUT_MAIN:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple("USED_CONSTANT", "_main.c"),
-            asmtouple("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
-            asmtouple("LOCAL_CONSTANT", "_main.c"),
-            asmtouple("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-        for c in ALL_CONSTANTS:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+            expected_removed_functions=expected_removed_functions,
+            expected_removed_constants=expected_removed_constants,
+        )
 
     def test_custom_codeconstseg(self):
         # Same as general but with custom code and const segments
-        expected_kept_functions = [
-            asmtouple("main", "main.c", output_dir="build/dce_custom_codeconstseg"),
-            asmtouple(
-                "NON_EMPTY_IRQ_HANDLER_sub",
+        output_dir = "build/dce_custom_codeconstseg"
+        expected_kept_functions = (
+            create_asmsyms(
+                [
+                    "main",
+                    "NON_EMPTY_IRQ_HANDLER_sub",
+                    "NON_EMPTY_IRQ_HANDLER",
+                    "EMPTY_IRQ_HANDLER",
+                ],
                 "main.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple("_main", "_main.c", output_dir="build/dce_custom_codeconstseg"),
-            asmtouple(
-                "used_function", "_main.c", output_dir="build/dce_custom_codeconstseg"
-            ),
-            asmtouple(
-                "used_function_sub",
+                output_dir,
+            )
+            + create_asmsyms(
+                [
+                    "_main",
+                    "used_function",
+                    "used_function_sub",
+                    "local_function_sub",
+                    "local_function",
+                    "function_used_by_ptr",
+                    "function_used_by_ptr_sub",
+                ],
                 "_main.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple(
-                "local_function_sub",
-                "_main.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple(
-                "local_function", "_main.c", output_dir="build/dce_custom_codeconstseg"
-            ),
-            asmtouple(
-                "function_used_by_ptr",
-                "_main.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple(
-                "function_used_by_ptr_sub",
-                "_main.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple(
-                "external_function",
+                output_dir,
+            )
+            + create_asmsyms(
+                [
+                    "external_function",
+                    "external_function_sub",
+                ],
                 "extra.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-            asmtouple(
-                "external_function_sub",
+                output_dir,
+            )
+        )
+
+        expected_kept_functions.append(
+            asmsym("NON_EMPTY_IRQ_HANDLER", "main.c", output_dir)
+        )
+
+        expected_kept_constants = [
+            asmsym("USED_CONSTANT", "_main.c", output_dir=output_dir),
+            asmsym("LOCAL_CONSTANT", "_main.c", output_dir=output_dir),
+            asmsym(
+                "EXTERNAL_CONST_ARRAY",
                 "extra.c",
-                output_dir="build/dce_custom_codeconstseg",
+                output_dir=output_dir,
             ),
         ]
-
-        expected_kept_functions += ALL_IRQ_HANDLERS_CUSTOM_CODECONSTSEG
 
         # Delete build/dce directory if it exists
-        if os.path.exists("build/dce_custom_codeconstseg"):
-            for file in os.listdir("build/dce_custom_codeconstseg"):
-                os.remove(os.path.join("build/dce_custom_codeconstseg", file))
-            os.rmdir("build/dce_custom_codeconstseg")
+        if os.path.exists(output_dir):
+            for file in os.listdir(output_dir):
+                os.remove(os.path.join(output_dir, file))
+            os.rmdir(output_dir)
 
         # Create build/dce directory
-        os.makedirs("build/dce_custom_codeconstseg")
+        os.makedirs(output_dir)
 
-        input_files = [
-            "build/asm_custom_codeconstseg/main.asm",
-            "build/asm_custom_codeconstseg/_main.asm",
-            "build/asm_custom_codeconstseg/extra.asm",
-        ]
-        output_dir = "build/dce_custom_codeconstseg"
-        entry_label = "_main"
-        exclude_functions = None
-        exclude_constants = None
-        codeseg = "XDDCODE"
-        constseg = "XDDCONST"
-        verbose = False
-        debug_flag = False
-        opt_irq = False
         (
             remove_functions,
             remove_constants,
             keep_functions,
             keep_constants,
         ) = run(
-            input_files=input_files,
+            input_files=[
+                "build/asm_custom_codeconstseg/main.asm",
+                "build/asm_custom_codeconstseg/_main.asm",
+                "build/asm_custom_codeconstseg/extra.asm",
+            ],
             output_dir=output_dir,
-            entry_label=entry_label,
-            exclude_functions=exclude_functions,
-            exclude_constants=exclude_constants,
-            codeseg=codeseg,
-            constseg=constseg,
-            verbose=verbose,
-            debug_flag=debug_flag,
-            opt_irq=opt_irq,
+            entry_label="_main",
+            exclude_functions=None,
+            exclude_constants=None,
+            codeseg="XDDCODE",
+            constseg="XDDCONST",
+            verbose=False,
+            debug_flag=False,
+            opt_irq=False,
         )
 
-        received_kept_functions = []
-        for function_obj in keep_functions:
-            received_kept_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_functions)
-        received_set = set(received_kept_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept functions: {missing_elements}\n"
-                f"Extraneous elements in kept functions: {extraneous_elements}"
-            )
-
-        expected_removed_functions = []
-
-        for f in ALL_FUNCTIONS_CUSTOM_CODECONSTSEG:
-            if f not in expected_kept_functions:
-                expected_removed_functions.append(f)
-
-        received_removed_functions = []
-        for function_obj in remove_functions:
-            received_removed_functions.append((function_obj.name, function_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_functions)
-        received_set = set(received_removed_functions)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed functions: {missing_elements}\n"
-                f"Extraneous elements in removed functions: {extraneous_elements}"
-            )
-
-        expected_kept_constants = [
-            asmtouple(
-                "USED_CONSTANT", "_main.c", output_dir="build/dce_custom_codeconstseg"
-            ),
-            asmtouple(
-                "LOCAL_CONSTANT", "_main.c", output_dir="build/dce_custom_codeconstseg"
-            ),
-            asmtouple(
-                "EXTERNAL_CONST_ARRAY",
-                "extra.c",
-                output_dir="build/dce_custom_codeconstseg",
-            ),
-        ]
-
-        received_kept_constants = []
-        for constant_obj in keep_constants:
-            received_kept_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_kept_constants)
-        received_set = set(received_kept_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in kept constants: {missing_elements}\n"
-                f"Extraneous elements in kept constants: {extraneous_elements}"
-            )
-
-        expected_removed_constants = []
-
-        for c in ALL_CONSTANTS_CUSTOM_CODECONSTSEG:
-            if c not in expected_kept_constants:
-                expected_removed_constants.append(c)
-
-        received_removed_constants = []
-        for constant_obj in remove_constants:
-            received_removed_constants.append((constant_obj.name, constant_obj.path))
-
-        # Check for missing or extraneous elements
-        expected_set = set(expected_removed_constants)
-        received_set = set(received_removed_constants)
-
-        missing_elements = expected_set - received_set
-        extraneous_elements = received_set - expected_set
-
-        if missing_elements or extraneous_elements:
-            self.fail(
-                f"Missing elements in removed constants: {missing_elements}\n"
-                f"Extraneous elements in removed constants: {extraneous_elements}"
-            )
+        assert_dce(
+            expected_kept_functions,
+            expected_kept_constants,
+            keep_functions,
+            keep_constants,
+            remove_functions,
+            remove_constants,
+            output_dir,
+        )
 
 
 if __name__ == "__main__":
