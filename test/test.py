@@ -30,10 +30,25 @@ import os
 import sys
 import colour_runner
 import colour_runner.runner
+from contextlib import contextmanager
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from stm8dce.__main__ import run
+
+
+@contextmanager
+def suppress_output():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
 
 def asmsym(symbolname, filename, output_dir="build/dce"):
@@ -248,27 +263,28 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/main.asm",
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm/main.asm",
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                ],
+                output_dir=output_dir,
+                entry_label="_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
+            )
 
         assert_dce(
             expected_kept_functions,
@@ -328,27 +344,28 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/main.asm",
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=True,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm/main.asm",
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                ],
+                output_dir=output_dir,
+                entry_label="_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=True,
+            )
 
         assert_dce(
             expected_kept_functions,
@@ -414,10 +431,40 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        # Should raise a ValueError since _local_excluded_function
-        # and _LOCAL_EXCLUDED_CONSTANT are defined multiple times
-        # and must be provided with file:name syntax
-        with self.assertRaises(ValueError):
+        with suppress_output():
+            # Should raise a ValueError since _local_excluded_function
+            # and _LOCAL_EXCLUDED_CONSTANT are defined multiple times
+            # and must be provided with file:name syntax
+            with self.assertRaises(ValueError):
+                (
+                    remove_functions,
+                    remove_constants,
+                    keep_functions,
+                    keep_constants,
+                ) = run(
+                    input_files=[
+                        "build/asm/main.asm",
+                        "build/asm/_main.asm",
+                        "build/asm/extra.asm",
+                    ],
+                    output_dir=output_dir,
+                    entry_label="_main",
+                    exclude_functions=[
+                        "_excluded_function",
+                        "_local_excluded_function",
+                    ],
+                    exclude_constants=[
+                        "_EXCLUDED_CONSTANT",
+                        "_LOCAL_EXCLUDED_CONSTANT",
+                    ],
+                    codeseg="CODE",
+                    constseg="CONST",
+                    verbose=False,
+                    debug_flag=False,
+                    opt_irq=False,
+                )
+
+        with suppress_output():
             (
                 remove_functions,
                 remove_constants,
@@ -431,42 +478,20 @@ class TestDeadCodeElimination(unittest.TestCase):
                 ],
                 output_dir=output_dir,
                 entry_label="_main",
-                exclude_functions=["_excluded_function", "_local_excluded_function"],
-                exclude_constants=["_EXCLUDED_CONSTANT", "_LOCAL_EXCLUDED_CONSTANT"],
+                exclude_functions=[
+                    "_excluded_function",
+                    "_main.asm:_local_excluded_function",
+                ],
+                exclude_constants=[
+                    "_EXCLUDED_CONSTANT",
+                    "_main.asm:_LOCAL_EXCLUDED_CONSTANT",
+                ],
                 codeseg="CODE",
                 constseg="CONST",
                 verbose=False,
                 debug_flag=False,
                 opt_irq=False,
             )
-
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/main.asm",
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=[
-                "_excluded_function",
-                "_main.asm:_local_excluded_function",
-            ],
-            exclude_constants=[
-                "_EXCLUDED_CONSTANT",
-                "_main.asm:_LOCAL_EXCLUDED_CONSTANT",
-            ],
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
 
         assert_dce(
             expected_kept_functions,
@@ -527,27 +552,28 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/main.asm",
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-            ],
-            output_dir=output_dir,
-            entry_label="_alternative_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm/main.asm",
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                ],
+                output_dir=output_dir,
+                entry_label="_alternative_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
+            )
 
         assert_dce(
             expected_kept_functions,
@@ -610,28 +636,29 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/main.asm",
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-                "build/obj/rel.rel",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm/main.asm",
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                    "build/obj/rel.rel",
+                ],
+                output_dir=output_dir,
+                entry_label="_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
+            )
 
         assert_dce(
             expected_kept_functions,
@@ -703,27 +730,28 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm/_main.asm",
-                "build/asm/extra.asm",
-                "build/obj/lib.lib",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="CODE",
-            constseg="CONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm/_main.asm",
+                    "build/asm/extra.asm",
+                    "build/obj/lib.lib",
+                ],
+                output_dir=output_dir,
+                entry_label="_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="CODE",
+                constseg="CONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
+            )
 
         expected_removed_functions = antilist(
             ALL_FUNCTIONS_WITHOUT_MAIN, expected_kept_functions
@@ -804,27 +832,28 @@ class TestDeadCodeElimination(unittest.TestCase):
         # Create build/dce directory
         os.makedirs(output_dir)
 
-        (
-            remove_functions,
-            remove_constants,
-            keep_functions,
-            keep_constants,
-        ) = run(
-            input_files=[
-                "build/asm_custom_codeconstseg/main.asm",
-                "build/asm_custom_codeconstseg/_main.asm",
-                "build/asm_custom_codeconstseg/extra.asm",
-            ],
-            output_dir=output_dir,
-            entry_label="_main",
-            exclude_functions=None,
-            exclude_constants=None,
-            codeseg="XDDCODE",
-            constseg="XDDCONST",
-            verbose=False,
-            debug_flag=False,
-            opt_irq=False,
-        )
+        with suppress_output():
+            (
+                remove_functions,
+                remove_constants,
+                keep_functions,
+                keep_constants,
+            ) = run(
+                input_files=[
+                    "build/asm_custom_codeconstseg/main.asm",
+                    "build/asm_custom_codeconstseg/_main.asm",
+                    "build/asm_custom_codeconstseg/extra.asm",
+                ],
+                output_dir=output_dir,
+                entry_label="_main",
+                exclude_functions=None,
+                exclude_constants=None,
+                codeseg="XDDCODE",
+                constseg="XDDCONST",
+                verbose=False,
+                debug_flag=False,
+                opt_irq=False,
+            )
 
         assert_dce(
             expected_kept_functions,
