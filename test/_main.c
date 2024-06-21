@@ -75,7 +75,10 @@ static void local_function(void) {
 void _main(void) {
     used_function();
     local_function();
+
+#ifdef EXT
     call_function_expected_by_module();
+#endif
 
     void (*function_ptr)(void) = &function_used_by_ptr;
     function_ptr();

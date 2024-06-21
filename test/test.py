@@ -194,6 +194,10 @@ class TestDeadCodeElimination(unittest.TestCase):
         if result.returncode != 0:
             raise RuntimeError(f"make asm failed with error: {result.stderr}")
 
+        result = subprocess.run(["make", "asm_rel_lib"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"make asm_rel_lib failed with error: {result.stderr}")
+
         # Execute make asm_custom_codeconstseg
         result = subprocess.run(
             ["make", "asm_custom_codeconstseg"], capture_output=True, text=True
@@ -296,6 +300,10 @@ class TestDeadCodeElimination(unittest.TestCase):
             output_dir,
         )
 
+        result = subprocess.run(["make", "elf_test"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"make elf_test failed with error: {result.stderr}")
+
     def test_irq_optimization(self):
         output_dir = "build/dce"
         expected_kept_functions = (
@@ -376,6 +384,10 @@ class TestDeadCodeElimination(unittest.TestCase):
             remove_constants,
             output_dir,
         )
+
+        result = subprocess.run(["make", "elf_test"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"make elf_test failed with error: {result.stderr}")
 
     def test_exclusion(self):
         output_dir = "build/dce"
@@ -503,6 +515,10 @@ class TestDeadCodeElimination(unittest.TestCase):
             output_dir,
         )
 
+        result = subprocess.run(["make", "elf_test"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"make elf_test failed with error: {result.stderr}")
+
     def test_alternative_entry_point(self):
         output_dir = "build/dce"
         expected_kept_functions = (
@@ -585,8 +601,13 @@ class TestDeadCodeElimination(unittest.TestCase):
             output_dir,
         )
 
+        # Afaik, sdcc doesn't even support alternative entry points atm...
+        # result = subprocess.run(["make", "elf_alt_entry_test"], capture_output=True, text=True)
+        # if result.returncode != 0:
+        #     raise RuntimeError(f"make elf_alt_entry_test failed with error: {result.stderr}")
+
     def test_rel(self):
-        output_dir = "build/dce"
+        output_dir = "build/dce_rel_lib"
         expected_kept_functions = (
             create_asmsyms(
                 [
@@ -596,6 +617,7 @@ class TestDeadCodeElimination(unittest.TestCase):
                     "EMPTY_IRQ_HANDLER",
                 ],
                 "main.c",
+                output_dir,
             )
             + create_asmsyms(
                 [
@@ -610,6 +632,7 @@ class TestDeadCodeElimination(unittest.TestCase):
                     "function_expected_by_module_sub",
                 ],
                 "_main.c",
+                output_dir,
             )
             + create_asmsyms(
                 [
@@ -617,15 +640,23 @@ class TestDeadCodeElimination(unittest.TestCase):
                     "external_function_sub",
                 ],
                 "extra.c",
+                output_dir,
             )
         )
 
-        expected_kept_constants = [
-            asmsym("USED_CONSTANT", "_main.c"),
-            asmsym("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
-            asmsym("LOCAL_CONSTANT", "_main.c"),
-            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
+        expected_kept_constants = create_asmsyms(
+            [
+                "USED_CONSTANT",
+                "CONSTANT_EXPECTED_BY_MODULE",
+                "LOCAL_CONSTANT",
+            ],
+            "_main.c",
+            output_dir,
+        ) + create_asmsyms(
+            ["EXTERNAL_CONST_ARRAY"],
+            "extra.c",
+            output_dir,
+        )
 
         # Delete build/dce directory if it exists
         if os.path.exists(output_dir):
@@ -644,9 +675,9 @@ class TestDeadCodeElimination(unittest.TestCase):
                 keep_constants,
             ) = run(
                 input_files=[
-                    "build/asm/main.asm",
-                    "build/asm/_main.asm",
-                    "build/asm/extra.asm",
+                    "build/asm_rel_lib/main.asm",
+                    "build/asm_rel_lib/_main.asm",
+                    "build/asm_rel_lib/extra.asm",
                     "build/obj/rel.rel",
                 ],
                 output_dir=output_dir,
@@ -670,8 +701,14 @@ class TestDeadCodeElimination(unittest.TestCase):
             output_dir,
         )
 
+        result = subprocess.run(
+            ["make", "elf_rel_test"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"make elf_rel_test failed with error: {result.stderr}")
+
     def test_lib(self):
-        output_dir = "build/dce"
+        output_dir = "build/dce_rel_lib"
 
         ALL_FUNCTIONS_WITHOUT_MAIN = [
             f
@@ -714,12 +751,19 @@ class TestDeadCodeElimination(unittest.TestCase):
             output_dir,
         )
 
-        expected_kept_constants = [
-            asmsym("USED_CONSTANT", "_main.c"),
-            asmsym("CONSTANT_EXPECTED_BY_MODULE", "_main.c"),
-            asmsym("LOCAL_CONSTANT", "_main.c"),
-            asmsym("EXTERNAL_CONST_ARRAY", "extra.c"),
-        ]
+        expected_kept_constants = create_asmsyms(
+            [
+                "USED_CONSTANT",
+                "CONSTANT_EXPECTED_BY_MODULE",
+                "LOCAL_CONSTANT",
+            ],
+            "_main.c",
+            output_dir,
+        ) + create_asmsyms(
+            ["EXTERNAL_CONST_ARRAY"],
+            "extra.c",
+            output_dir,
+        )
 
         # Delete build/dce directory if it exists
         if os.path.exists(output_dir):
@@ -738,8 +782,8 @@ class TestDeadCodeElimination(unittest.TestCase):
                 keep_constants,
             ) = run(
                 input_files=[
-                    "build/asm/_main.asm",
-                    "build/asm/extra.asm",
+                    "build/asm_rel_lib/_main.asm",
+                    "build/asm_rel_lib/extra.asm",
                     "build/obj/lib.lib",
                 ],
                 output_dir=output_dir,
@@ -864,6 +908,14 @@ class TestDeadCodeElimination(unittest.TestCase):
             remove_constants,
             output_dir,
         )
+
+        result = subprocess.run(
+            ["make", "elf_custom_codeconstseg_test"], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"make elf_custom_codeconstseg_test failed with error: {result.stderr}"
+            )
 
 
 if __name__ == "__main__":
