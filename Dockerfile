@@ -23,4 +23,4 @@ COPY . /root/
 RUN pip3 install /root/ --break-system-packages
 
 # Set the entrypoint to /bin/bash
-ENTRYPOINT ["/usr/bin/bash", "/root/test/test.sh", "--ACK"]
+ENTRYPOINT ["/usr/bin/bash", "/root/tests/test.sh", "--ACK"]

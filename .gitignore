@@ -1,3 +1,5 @@
 dist/
 __pycache__
-test/build
+build/
+example/build
+tests/build*
