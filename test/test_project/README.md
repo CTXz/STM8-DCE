@@ -1,0 +1,3 @@
+# Test Project
+
+This project is used to test if the stm8dce tool works on a real project. It is based on the ["Dampflog Interface Board Firmware"](https://github.com/TuDo-Makerspace/Dampflog) with slight modifications to make it compatible with older SDCC versions. The firmware acts as a decent benchmark, as it makes use of the SPL, contains function pointers and all around provides a somewhat richer codebase than a simple blinky example.

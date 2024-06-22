@@ -20,5 +20,7 @@ RUN for version in 3.8.0 3.9.0 4.0.0 4.1.0 4.2.0 4.3.0 4.4.0; do \
 
 COPY . /root/
 
+RUN pip3 install /root/ --break-system-packages
+
 # Set the entrypoint to /bin/bash
-ENTRYPOINT ["/usr/bin/bash", "/root/test.sh"]
+ENTRYPOINT ["/usr/bin/bash", "/root/test/test.sh", "--ACK"]
