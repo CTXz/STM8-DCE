@@ -13,9 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# SDCC STM8 Dead Code Elimination Tool
-# Description: Main file for the STM8 SDCC dead code elimination tool.
-
 # Credits: This tool has been largely inspired by XaviDCR92's sdccrm tool:
 #          https://github.com/XaviDCR92/sdccrm
 #

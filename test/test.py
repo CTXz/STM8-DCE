@@ -13,13 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# SDCC STM8 Dead Code Elimination Tool
-# Description: Main file for the STM8 SDCC dead code elimination tool.
-
-# Credits: This tool has been largely inspired by XaviDCR92's sdccrm tool:
-#          https://github.com/XaviDCR92/sdccrm
-#
-
 """
 Unit tests for the STM8 SDCC dead code elimination tool.
 """
@@ -36,6 +29,8 @@ from contextlib import contextmanager
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from stm8dce.__main__ import run
+
+build_dir = "build"
 
 
 @contextmanager
@@ -206,7 +201,9 @@ def c2asm(input_c_files, output_dir, args=[]):
 def c2rel(input_c_files, output_dir, args=[]):
     ret = []
     for input_c_file in input_c_files:
-        ret.append(f"{output_dir}/{os.path.basename(input_c_file).replace(".c", ".rel")}")
+        ret.append(
+            f"{output_dir}/{os.path.basename(input_c_file).replace('.c', '.rel')}"
+        )
         subprocess.run(
             [
                 "sdcc",
@@ -227,7 +224,9 @@ def c2rel(input_c_files, output_dir, args=[]):
 def asm2rel(input_asm_files, output_dir, args=[]):
     ret = []
     for input_asm_file in input_asm_files:
-        ret.append(f"{output_dir}/{os.path.basename(input_asm_file).replace('.asm', '.rel')}")
+        ret.append(
+            f"{output_dir}/{os.path.basename(input_asm_file).replace('.asm', '.rel')}"
+        )
         subprocess.run(
             [
                 "sdasstm8",
@@ -256,20 +255,22 @@ def rel2lib(input_rel_files, out, args=[]):
             check=True,
         )
 
+
 def create_elf(input_rel_or_lib_files, out, args=[]):
-        subprocess.run(
-            [
-                "sdcc",
-                "-o",
-                out,
-                "-mstm8",
-                "--out-fmt-elf",
-                "-DSTM8S103",
-            ]
-            + args
-            + input_rel_or_lib_files,
-            check=True,
-        )
+    subprocess.run(
+        [
+            "sdcc",
+            "-o",
+            out,
+            "-mstm8",
+            "--out-fmt-elf",
+            "-DSTM8S103",
+        ]
+        + args
+        + input_rel_or_lib_files,
+        check=True,
+    )
+
 
 class TestDeadCodeElimination(unittest.TestCase):
     @classmethod
@@ -278,8 +279,7 @@ class TestDeadCodeElimination(unittest.TestCase):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     def setUp(self):
-        # Create build/test_name/asm, build/test_name/rel, build/test_name/lib and build/test_name/dce
-        self.build_dir = os.path.join("build", self._testMethodName)
+        self.build_dir = os.path.join(build_dir, self._testMethodName)
         self.dce_input_dir = self.build_dir + "/asm"
         self.dce_output_dir = self.build_dir + "/dce"
         self.rel_output_dir = self.build_dir + "/rel"
@@ -842,7 +842,7 @@ class TestDeadCodeElimination(unittest.TestCase):
             rels,
             lib,
         )
-        
+
         input_files = c2asm(
             [
                 "_main.c",
@@ -930,7 +930,8 @@ class TestDeadCodeElimination(unittest.TestCase):
             ALL_FUNCTIONS_WITHOUT_MAIN, expected_kept_functions
         )
         expected_removed_constants = antilist(
-            create_all_constants(output_dir=self.dce_output_dir), expected_kept_constants
+            create_all_constants(output_dir=self.dce_output_dir),
+            expected_kept_constants,
         )
 
         assert_dce(
@@ -1059,7 +1060,14 @@ class TestDeadCodeElimination(unittest.TestCase):
             f"{self.build_dir}/{self._testMethodName}.elf",
         )
 
+
 if __name__ == "__main__":
-    colour_runner.runner.ColourTextTestRunner(verbosity=2).run(
+    if len(sys.argv) > 1:
+        build_dir = sys.argv[1]
+
+    res = colour_runner.runner.ColourTextTestRunner(verbosity=2).run(
         unittest.TestLoader().loadTestsFromTestCase(TestDeadCodeElimination)
     )
+
+    if res.failures or res.errors:
+        sys.exit(1)

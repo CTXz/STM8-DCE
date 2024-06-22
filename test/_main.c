@@ -1,5 +1,14 @@
 #include <stdint.h>
 
+/* SDCC v4.0 and older does not automatically "pull" the module containing the main function
+ * Referencing the main function here fixes that
+ * See https://github.com/tenbaht/sduino/issues/76
+ */
+#ifdef EXT
+void main(void);
+void (*dummy_variable) (void) = main;
+#endif
+
 volatile const int UNUSED_CONSTANT = 123;
 volatile const int USED_CONSTANT = 321;
 volatile const int CONSTANT_EXPECTED_BY_MODULE = 456;
