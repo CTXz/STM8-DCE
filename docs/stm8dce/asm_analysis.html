@@ -137,6 +137,24 @@ STM8 assembly code.</p>
 <dd>List of matching Function objects.</dd>
 </dl></div>
 </dd>
+<dt id="stm8dce.asm_analysis.initializers_referencing_external"><code class="name flex">
+<span>def <span class="ident">initializers_referencing_external</span></span>(<span>initializers, external_symbol)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of initializer objects referencing an external symbol.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>initializers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Initializer objects.</dd>
+<dt><strong><code>external_symbol</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the external symbol to match.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of matching Initializer objects.</dd>
+</dl></div>
+</dd>
 <dt id="stm8dce.asm_analysis.interrupt_handlers"><code class="name flex">
 <span>def <span class="ident">interrupt_handlers</span></span>(<span>functions)</span>
 </code></dt>
@@ -183,8 +201,8 @@ STM8 assembly code.</p>
 <div class="desc"><p>Class to store constant definitions.</p>
 <p>Input Attributes:
 path (str): Path of the file the constant is defined in.
-name (str): Name of the constant.
 start_line_number (int): Start line of the constant.
+name (str): Name of the constant.
 end_line_number (int): End line of the constant.</p>
 <p>Generated Attributes:
 global_defs (list): List of resolved global definitions associated with the constant (See resolve_globals).</p>
@@ -236,14 +254,16 @@ See help(type(self)) for accurate signature.</p></div>
 <div class="desc"><p>Class to store function definitions.</p>
 <p>Input Attributes:
 path (str): Path of the file the function is defined in.
-name (str): Name of the function.
 start_line_number (int): Start line of the function.
+name (str): Name of the function.
 end_line_number (int): End line of the function.
 calls_str (list): List of calls made by the function.
 long_read_labels_str (list): List of long read labels.</p>
 <p>Generated Attributes:
 calls (list): List of resolved functions called by the function (See resolve_calls).
+external_calls (list): List of external functions (in rel &amp; lib files) called by the function.
 constants (list): List of resolved constants read by the function (See resolve_constants).
+external_constants (list): List of external constants (in rel &amp; lib files) read by the function.
 global_defs (list): List of resolved global definitions used by the function (See resolve_globals).
 fptrs (list): List of resolved function pointers assigned by the function (See resolve_fptrs).
 isr_def (IntDef): Resolved interrupt definition associated with the function (See resolve_isr).
@@ -378,6 +398,55 @@ See help(type(self)) for accurate signature.</p></div>
 </dd>
 </dl>
 </dd>
+<dt id="stm8dce.asm_analysis.Initializer"><code class="flex name class">
+<span>class <span class="ident">Initializer</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store initializer definitions.</p>
+<p>Input Attributes:
+path (str): Path of the file the initializer is defined in.
+start_line_number (int): Start line of the initializer.
+name (str): Name of the initializer.
+end_line_number (int): End line of the initializer.
+pointers_str (list): List of pointers defined by the initializer. Pointers store absolute labels.</p>
+<p>Generated Attributes:
+pointers (list): List of resolved pointers associated with the initializer (See resolve_pointers).</p>
+<p>The intended use of this class is to first parse the input attributes and then call the resolve_* functions</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="stm8dce.asm_analysis.Initializer.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, path, start_line_number, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Initializer.__repr__"><code class="name flex">
+<span>def <span class="ident">__repr__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return repr(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Initializer.__str__"><code class="name flex">
+<span>def <span class="ident">__str__</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return str(self).</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Initializer.print"><code class="name flex">
+<span>def <span class="ident">print</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Prints the details of the initializer.</p></div>
+</dd>
+<dt id="stm8dce.asm_analysis.Initializer.resolve_pointers"><code class="name flex">
+<span>def <span class="ident">resolve_pointers</span></span>(<span>self, functions, constants)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="stm8dce.asm_analysis.IntDef"><code class="flex name class">
 <span>class <span class="ident">IntDef</span></span>
 </code></dt>
@@ -443,6 +512,7 @@ See help(type(self)) for accurate signature.</p></div>
 <li><code><a title="stm8dce.asm_analysis.function_by_filename_name" href="#stm8dce.asm_analysis.function_by_filename_name">function_by_filename_name</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.functions_by_name" href="#stm8dce.asm_analysis.functions_by_name">functions_by_name</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.functions_referencing_external" href="#stm8dce.asm_analysis.functions_referencing_external">functions_referencing_external</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.initializers_referencing_external" href="#stm8dce.asm_analysis.initializers_referencing_external">initializers_referencing_external</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.interrupt_handlers" href="#stm8dce.asm_analysis.interrupt_handlers">interrupt_handlers</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.traverse_calls" href="#stm8dce.asm_analysis.traverse_calls">traverse_calls</a></code></li>
 </ul>
@@ -480,6 +550,16 @@ See help(type(self)) for accurate signature.</p></div>
 <li><code><a title="stm8dce.asm_analysis.GlobalDef.__repr__" href="#stm8dce.asm_analysis.GlobalDef.__repr__">__repr__</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.GlobalDef.__str__" href="#stm8dce.asm_analysis.GlobalDef.__str__">__str__</a></code></li>
 <li><code><a title="stm8dce.asm_analysis.GlobalDef.print" href="#stm8dce.asm_analysis.GlobalDef.print">print</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="stm8dce.asm_analysis.Initializer" href="#stm8dce.asm_analysis.Initializer">Initializer</a></code></h4>
+<ul class="">
+<li><code><a title="stm8dce.asm_analysis.Initializer.__init__" href="#stm8dce.asm_analysis.Initializer.__init__">__init__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Initializer.__repr__" href="#stm8dce.asm_analysis.Initializer.__repr__">__repr__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Initializer.__str__" href="#stm8dce.asm_analysis.Initializer.__str__">__str__</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Initializer.print" href="#stm8dce.asm_analysis.Initializer.print">print</a></code></li>
+<li><code><a title="stm8dce.asm_analysis.Initializer.resolve_pointers" href="#stm8dce.asm_analysis.Initializer.resolve_pointers">resolve_pointers</a></code></li>
 </ul>
 </li>
 <li>

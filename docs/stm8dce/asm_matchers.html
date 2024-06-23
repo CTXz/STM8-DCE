@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>stm8dce.asm_matchers API documentation</title>
-<meta name="description" content="This module provides functions to pattern match STM8 SDCC generated assembly code." />
+<meta name="description" content="This module provides classes and functions to pattern match STM8 SDCC generated assembly code." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,7 +22,7 @@
 <h1 class="title">Module <code>stm8dce.asm_matchers</code></h1>
 </header>
 <section id="section-intro">
-<p>This module provides functions to pattern match STM8 SDCC generated assembly code.</p>
+<p>This module provides classes and functions to pattern match STM8 SDCC generated assembly code.</p>
 </section>
 <section>
 </section>
@@ -81,7 +81,7 @@ If there's no matching class for the line, an empty list is returned.</p>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enum to represent different types of areas in assembly code.</p></div>
+<div class="desc"><p>Enum to represent relevant types of areas in assembly code.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>enum.Enum</li>
@@ -180,7 +180,7 @@ See help(type) for accurate signature.</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="stm8dce.asm_matchers.Directive.is_area_directive"><code class="name flex">
-<span>def <span class="ident">is_area_directive</span></span>(<span>eval, area_type=None)</span>
+<span>def <span class="ident">is_area_directive</span></span>(<span>eval, area_name=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Static method to check if an instance is a Directive and is an area directive.</p>
@@ -188,13 +188,29 @@ See help(type) for accurate signature.</p></div>
 <dl>
 <dt><strong><code>eval</code></strong></dt>
 <dd>The instance to check.</dd>
-<dt><strong><code>area_type</code></strong> :&ensp;<code><a title="stm8dce.asm_matchers.AreaType" href="#stm8dce.asm_matchers.AreaType">AreaType</a></code>, optional</dt>
-<dd>The area type to check for.</dd>
+<dt><strong><code>area_name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The area to check for.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>bool</code></dt>
-<dd>True if the instance is a Directive and is an area directive (and matches the area type, if provided), False otherwise.</dd>
+<dd>True if the instance is a Directive and is an area directive (and matches the area, if provided), False otherwise.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_matchers.Directive.is_dw_directive"><code class="name flex">
+<span>def <span class="ident">is_dw_directive</span></span>(<span>eval)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Static method to check if an instance is a Directive and is a .dw directive.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>eval</code></strong></dt>
+<dd>The instance to check.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>True if the instance is a Directive and is a .dw directive, False otherwise.</dd>
 </dl></div>
 </dd>
 <dt id="stm8dce.asm_matchers.Directive.is_global_directive"><code class="name flex">
@@ -244,19 +260,30 @@ See help(type) for accurate signature.</p></div>
 <div class="desc"><p>Return str(self).</p></div>
 </dd>
 <dt id="stm8dce.asm_matchers.Directive.is_area"><code class="name flex">
-<span>def <span class="ident">is_area</span></span>(<span>self, area_type=None)</span>
+<span>def <span class="ident">is_area</span></span>(<span>self, area_name=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if the directive is an area directive, optionally of a specific area type.</p>
+<div class="desc"><p>Checks if the directive is an area directive, optionally of a specific area.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>area_type</code></strong> :&ensp;<code><a title="stm8dce.asm_matchers.AreaType" href="#stm8dce.asm_matchers.AreaType">AreaType</a></code>, optional</dt>
-<dd>The area type to check for.</dd>
+<dt><strong><code>area_name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The area to check for.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>bool</code></dt>
-<dd>True if the directive is an area directive (and matches the area type, if provided), False otherwise.</dd>
+<dd>True if the directive is an area directive (and matches the area, if provided), False otherwise.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_matchers.Directive.is_dw"><code class="name flex">
+<span>def <span class="ident">is_dw</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if the directive is a .dw directive.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>True if the directive is a .dw directive, False otherwise.</dd>
 </dl></div>
 </dd>
 <dt id="stm8dce.asm_matchers.Directive.is_global"><code class="name flex">
@@ -638,6 +665,8 @@ This means, both 'ldw x, #(_label+0)' and 'ldw x, _label+0' will match.</p>
 <li><code><a title="stm8dce.asm_matchers.Directive.__str__" href="#stm8dce.asm_matchers.Directive.__str__">__str__</a></code></li>
 <li><code><a title="stm8dce.asm_matchers.Directive.is_area" href="#stm8dce.asm_matchers.Directive.is_area">is_area</a></code></li>
 <li><code><a title="stm8dce.asm_matchers.Directive.is_area_directive" href="#stm8dce.asm_matchers.Directive.is_area_directive">is_area_directive</a></code></li>
+<li><code><a title="stm8dce.asm_matchers.Directive.is_dw" href="#stm8dce.asm_matchers.Directive.is_dw">is_dw</a></code></li>
+<li><code><a title="stm8dce.asm_matchers.Directive.is_dw_directive" href="#stm8dce.asm_matchers.Directive.is_dw_directive">is_dw_directive</a></code></li>
 <li><code><a title="stm8dce.asm_matchers.Directive.is_global" href="#stm8dce.asm_matchers.Directive.is_global">is_global</a></code></li>
 <li><code><a title="stm8dce.asm_matchers.Directive.is_global_directive" href="#stm8dce.asm_matchers.Directive.is_global_directive">is_global_directive</a></code></li>
 </ul>

@@ -119,6 +119,28 @@ globals, interrupts, functions, and constants.</p></div>
 <dd>The label indicating the start of the function.</dd>
 </dl></div>
 </dd>
+<dt id="stm8dce.asm_parser.ASMParser._parse_initializer"><code class="name flex">
+<span>def <span class="ident">_parse_initializer</span></span>(<span>self, label)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parses an initializer and extracts relevant information.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>label</code></strong> :&ensp;<code>Label</code></dt>
+<dd>The label indicating the start of the initializer.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.asm_parser.ASMParser._parse_initializer_section"><code class="name flex">
+<span>def <span class="ident">_parse_initializer_section</span></span>(<span>self, area)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parses the initializer section of the file.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>area</code></strong> :&ensp;<code>Directive</code></dt>
+<dd>The directive indicating the start of the initializer section.</dd>
+</dl></div>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -146,6 +168,8 @@ globals, interrupts, functions, and constants.</p></div>
 <li><code><a title="stm8dce.asm_parser.ASMParser._parse_const_section" href="#stm8dce.asm_parser.ASMParser._parse_const_section">_parse_const_section</a></code></li>
 <li><code><a title="stm8dce.asm_parser.ASMParser._parse_constant" href="#stm8dce.asm_parser.ASMParser._parse_constant">_parse_constant</a></code></li>
 <li><code><a title="stm8dce.asm_parser.ASMParser._parse_function" href="#stm8dce.asm_parser.ASMParser._parse_function">_parse_function</a></code></li>
+<li><code><a title="stm8dce.asm_parser.ASMParser._parse_initializer" href="#stm8dce.asm_parser.ASMParser._parse_initializer">_parse_initializer</a></code></li>
+<li><code><a title="stm8dce.asm_parser.ASMParser._parse_initializer_section" href="#stm8dce.asm_parser.ASMParser._parse_initializer_section">_parse_initializer_section</a></code></li>
 </ul>
 </li>
 </ul>

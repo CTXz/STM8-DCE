@@ -29,6 +29,27 @@
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="stm8dce.rel_analysis.modules_by_defined_symbol"><code class="name flex">
+<span>def <span class="ident">modules_by_defined_symbol</span></span>(<span>modules, symbol_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a list of modules that define the given symbol.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>modules</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of Module objects.</dd>
+<dt><strong><code>symbol_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The symbol to search for.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code></dt>
+<dd>List of modules that define the symbol.</dd>
+</dl></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -118,19 +139,51 @@
 <dd>
 <div class="desc"><p>Prints the details of the module.</p></div>
 </dd>
-<dt id="stm8dce.rel_analysis.Module.resolve_references"><code class="name flex">
-<span>def <span class="ident">resolve_references</span></span>(<span>self, keep_functions, all_functions, all_constants)</span>
+<dt id="stm8dce.rel_analysis.Module.resolve_incoming_references"><code class="name flex">
+<span>def <span class="ident">resolve_incoming_references</span></span>(<span>self, keep_functions, all_initializers)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Resolves references for the module.
+<div class="desc"><p>Resolves incoming references for the module.
+This means finding the functions that reference this module's defined symbols.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>keep_functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of kept function objects.</dd>
+<dt><strong><code>all_initializers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all initializer objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.rel_analysis.Module.resolve_outgoing_references"><code class="name flex">
+<span>def <span class="ident">resolve_outgoing_references</span></span>(<span>self, all_functions, all_constants)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves outgoing references for the module.
+This means finding the functions and constants that this module references.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>all_functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all function objects.</dd>
+<dt><strong><code>all_constants</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all constant objects.</dd>
+</dl></div>
+</dd>
+<dt id="stm8dce.rel_analysis.Module.resolve_references"><code class="name flex">
+<span>def <span class="ident">resolve_references</span></span>(<span>self, keep_functions, all_initializers, all_functions, all_constants)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Resolves references for the module by calling incoming and outgoing reference resolvers.
 Resolving means:
 - Find the functions that reference this module's defined symbols
 - Find the functions and constants that this module references</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>functions</code></strong> :&ensp;<code>list</code></dt>
+<dt><strong><code>keep_functions</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of kept function objects.</dd>
+<dt><strong><code>all_initializers</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all initializer objects.</dd>
+<dt><strong><code>all_functions</code></strong> :&ensp;<code>list</code></dt>
 <dd>List of all function objects.</dd>
-<dt><strong><code>constants</code></strong> :&ensp;<code>list</code></dt>
+<dt><strong><code>all_constants</code></strong> :&ensp;<code>list</code></dt>
 <dd>List of all constant objects.</dd>
 </dl></div>
 </dd>
@@ -161,6 +214,11 @@ Resolving means:
 <li><code><a title="stm8dce" href="index.html">stm8dce</a></code></li>
 </ul>
 </li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="stm8dce.rel_analysis.modules_by_defined_symbol" href="#stm8dce.rel_analysis.modules_by_defined_symbol">modules_by_defined_symbol</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
@@ -172,6 +230,8 @@ Resolving means:
 <li><code><a title="stm8dce.rel_analysis.Module.add_defined_symbol" href="#stm8dce.rel_analysis.Module.add_defined_symbol">add_defined_symbol</a></code></li>
 <li><code><a title="stm8dce.rel_analysis.Module.add_referenced_symbol" href="#stm8dce.rel_analysis.Module.add_referenced_symbol">add_referenced_symbol</a></code></li>
 <li><code><a title="stm8dce.rel_analysis.Module.print" href="#stm8dce.rel_analysis.Module.print">print</a></code></li>
+<li><code><a title="stm8dce.rel_analysis.Module.resolve_incoming_references" href="#stm8dce.rel_analysis.Module.resolve_incoming_references">resolve_incoming_references</a></code></li>
+<li><code><a title="stm8dce.rel_analysis.Module.resolve_outgoing_references" href="#stm8dce.rel_analysis.Module.resolve_outgoing_references">resolve_outgoing_references</a></code></li>
 <li><code><a title="stm8dce.rel_analysis.Module.resolve_references" href="#stm8dce.rel_analysis.Module.resolve_references">resolve_references</a></code></li>
 <li><code><a title="stm8dce.rel_analysis.Module.set_name" href="#stm8dce.rel_analysis.Module.set_name">set_name</a></code></li>
 </ul>
