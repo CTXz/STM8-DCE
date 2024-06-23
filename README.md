@@ -44,9 +44,13 @@ Please note that this tool is still in early development and has not been thorou
 
 ## Installation
 
-The tool has been written in Python 3 and will be available on PyPi once further testing has been done.
+The tool has been written in Python 3 and is available on PyPI. You can install it using pip:
 
-Until then, you can clone the repository, and install it manually:
+```bash
+$ python3 -m pip install stm8dce
+```
+
+Alternatively, you can clone the repository, and install it from the source:
 
 ```bash
 $ git clone https://github.com/CTXz/STM8-DCE.git
