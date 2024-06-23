@@ -47,7 +47,7 @@ Please note that this tool is still in early development and has not been thorou
 The tool has been written in Python 3 and is available on PyPI. You can install it using pip:
 
 ```bash
-$ python3 -m pip install stm8dce
+$ pip install stm8dce
 ```
 
 Alternatively, you can clone the repository, and install it from the source:
@@ -55,7 +55,7 @@ Alternatively, you can clone the repository, and install it from the source:
 ```bash
 $ git clone https://github.com/CTXz/STM8-DCE.git
 $ cd STM8-DCE
-$ python3 -m pip install .
+$ pip install .
 ```
 
 ## Usage
