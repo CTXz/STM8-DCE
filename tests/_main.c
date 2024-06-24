@@ -30,6 +30,13 @@ void unused_function(void) {
     }
 }
 
+void unused_function_with_fptr(void) {
+    void (*function_ptr)(void) = &unused_function;
+    for (int i = 0; i < UNUSED_CONSTANT; i++) {
+        function_ptr();
+    }
+}
+
 void used_function_sub(void) {
     for (int i = 0; i < USED_CONSTANT; i++) {
         __asm__("nop");
@@ -81,6 +88,10 @@ static void local_function(void) {
     local_function_sub();
 }
 
+void recursive_function(void) {
+    recursive_function();
+}
+
 void _main(void) {
     used_function();
     local_function();
@@ -95,4 +106,6 @@ void _main(void) {
     for (uint8_t i = 0; i < external_const_array_ptr[1]; i++) {
         external_function_ptr();
     }
+
+    recursive_function();
 }
