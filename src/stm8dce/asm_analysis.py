@@ -96,12 +96,11 @@ class Function:
         long_read_labels_str (list): List of long read labels.
 
     Generated Attributes:
-        calls (list): List of resolved functions called by the function (See resolve_calls).
+        function_references (list): List of functions referenced by the function (See resolve_calls & resolve_fptrs).
         external_calls (list): List of external functions (in rel & lib files) called by the function.
         constants (list): List of resolved constants read by the function (See resolve_constants).
         external_constants (list): List of external constants (in rel & lib files) read by the function.
         global_defs (list): List of resolved global definitions used by the function (See resolve_globals).
-        fptrs (list): List of resolved function pointers assigned by the function (See resolve_fptrs).
         isr_def (IntDef): Resolved interrupt definition associated with the function (See resolve_isr).
         empty (bool): Indicates if the function is empty.
 
@@ -117,12 +116,11 @@ class Function:
         self.calls_str = []
         self.long_read_labels_str = []
 
-        self.calls = []
+        self.function_references = []
         self.external_calls = []
         self.constants = []
         self.external_constants = []
         self.global_defs = []
-        self.fptrs = []
         self.isr_def = None
         self.empty = True
 
@@ -140,14 +138,15 @@ class Function:
         print(f"End line: {self.end_line_number}")
         print(f"Calls: {self.calls_str}")
         print(f"Long read labels: {self.long_read_labels_str}")
-        print(f"Resolved calls: {[call.name for call in self.calls]}")
+        print(
+            f"Resolved function references: {[call.name for call in self.function_references]}"
+        )
         print(f"External calls: {self.external_calls}")
         print(f"Resolved constants: {[const.name for const in self.constants]}")
         print(f"External constants: {self.external_constants}")
         print(
             f"Resolved global definitions: {[glob.name for glob in self.global_defs]}"
         )
-        print(f"Resolved function pointers: {[fptr.name for fptr in self.fptrs]}")
         print(f"IRQ Handler: {self.isr_def}")
         print(f"Empty: {self.empty}")
 
@@ -209,7 +208,7 @@ class Function:
                     for func in funcs:
                         print(f"In file {func.path}:{func.start_line_number}")
                     exit(1)
-                self.calls.append(funcs[0])
+                self.function_references.append(funcs[0])
                 debug.pdbg(
                     f"Function {self.name} in {self.path}:{self.start_line_number} calls function {funcs[0].name} in {funcs[0].path}:{funcs[0].start_line_number}"
                 )
@@ -222,7 +221,7 @@ class Function:
                                 f"Error: Multiple static definitions for function {func} in {func.path}"
                             )
                             exit(1)
-                        self.calls.append(func)
+                        self.function_references.append(func)
                         debug.pdbg(
                             f"Function {self.name} in {self.path}:{self.start_line_number} calls static function {func.name} in {func.path}:{func.start_line_number}"
                         )
@@ -238,7 +237,7 @@ class Function:
         for long_read_label in self.long_read_labels_str:
             for func in functions:
                 if func.name == long_read_label:
-                    self.fptrs.append(func)
+                    self.function_references.append(func)
                     debug.pdbg(
                         f"Function {self.name} in {self.path}:{self.start_line_number} assigns function pointer to {func.name} in {func.path}:{func.start_line_number}"
                     )
@@ -568,9 +567,9 @@ def constant_by_filename_name(constants, filename, name):
     return ret
 
 
-def traverse_calls(functions, top):
+def traverse_functions(functions, top):
     """
-    Traverse all calls made by a function and return a list of all traversed functions.
+    Traverse all functions referenced by a function and return a list of all traversed functions.
 
     Args:
         functions (list): List of Function objects.
@@ -583,11 +582,11 @@ def traverse_calls(functions, top):
 
     ret = []
 
-    for call in top.calls:
-        if call == top:
+    for function in top.function_references:
+        if function == top:
             continue
 
-        ret += [call] + traverse_calls(functions, call)
+        ret += [function] + traverse_functions(functions, function)
 
     debug.pdbg(f"Traversing out {top.name} in {top.path}:{top.start_line_number}")
 
