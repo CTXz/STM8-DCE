@@ -209,7 +209,7 @@ def run(
 
         entry_function = entry_function[0]
 
-        # Keep main function and all of its traversed calls
+        # Keep entry function and all of its traversed functions
         debug.pdbg()
         debug.pdbg(f"Traversing entry function: {entry_label}")
         debug.pseperator()
@@ -248,7 +248,7 @@ def run(
     else:
         raise ValueError(f"Error: Entry label not found: {entry_label}")
 
-    # Keep interrupt handlers and all of their traversed calls
+    # Keep interrupt handlers and all of their traversed functions
     # but exclude unused IRQ handlers if opted by the user
     interrupt_handlers = asm_analysis.interrupt_handlers(functions)
     for handler in interrupt_handlers:
@@ -277,7 +277,7 @@ def run(
                     functions, function_pointer
                 )
 
-    # Keep functions excluded by the user and all of their traversed calls
+    # Keep functions excluded by the user and all of their traversed functions
     if exclude_functions:
         for exclude_name in exclude_functions:
             filename, name = eval_flabel(exclude_name)
